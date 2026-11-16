@@ -7,6 +7,7 @@ def test_health_responde_200_sem_integracoes(client):
     assert body["service"] == "sampatech-ia"
     assert body["environment"] == "test"
     assert body["components"] == {
+        "anonymizer": "ready",
         "dotnet_api": "not_configured",
         "blob_storage": "not_configured",
         "llm": "not_configured",

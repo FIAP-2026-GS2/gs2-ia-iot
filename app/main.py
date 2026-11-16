@@ -10,8 +10,15 @@ from typing import Literal
 from fastapi import Depends, FastAPI
 from pydantic import BaseModel
 
+import logging
+
 from app import __version__
+from app.api.analyze import router as analyze_router
+from app.api.dependencies import get_anonymizer
 from app.config import Settings, get_settings
+from app.vision.anonymizer import AnonymizationError
+
+logger = logging.getLogger("sampatech.ia")
 
 
 @asynccontextmanager
@@ -19,6 +26,12 @@ async def lifespan(_: FastAPI):
     # Fail fast: lê e valida a configuração na subida. Se faltar a IA_API_KEY ou houver
     # valor de exemplo, o servidor nem sobe, e o erro diz qual variável corrigir.
     get_settings()
+    # Carrega os modelos de anonimização já na subida, para a 1ª requisição não esperar.
+    # Se falharem, a API sobe mesmo assim (o /health mostra), mas o /analisar responde 503.
+    try:
+        get_anonymizer()
+    except AnonymizationError as error:
+        logger.error("Anonimização indisponível: %s", error)
     yield
 
 
@@ -31,11 +44,13 @@ app = FastAPI(
     version=__version__,
     lifespan=lifespan,
 )
+app.include_router(analyze_router)
 
 ComponentState = Literal["configured", "not_configured"]
 
 
 class HealthComponents(BaseModel):
+    anonymizer: Literal["ready", "unavailable"]
     dotnet_api: ComponentState
     blob_storage: ComponentState
     llm: ComponentState
@@ -54,6 +69,15 @@ def _state(configured: bool) -> ComponentState:
     return "configured" if configured else "not_configured"
 
 
+def _anonymizer_state() -> Literal["ready", "unavailable"]:
+    # Os modelos são locais (arquivos .onnx): conferir é instantâneo e não chama nada externo.
+    try:
+        get_anonymizer()
+        return "ready"
+    except AnonymizationError:
+        return "unavailable"
+
+
 @app.get("/health", response_model=HealthResponse, tags=["Saúde"])
 def health(settings: Settings = Depends(get_settings)) -> HealthResponse:
     """Diz se o processo está de pé. Chamado pelo health check da API .NET e pelo ACI.
@@ -69,6 +93,7 @@ def health(settings: Settings = Depends(get_settings)) -> HealthResponse:
         version=__version__,
         environment=settings.app_env,
         components=HealthComponents(
+            anonymizer=_anonymizer_state(),
             dotnet_api=_state(settings.dotnet_configured),
             blob_storage=_state(settings.blob_configured),
             llm=_state(settings.llm_configured),
