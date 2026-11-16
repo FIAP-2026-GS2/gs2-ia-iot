@@ -15,17 +15,31 @@ import logging
 from app import __version__
 from app.api.analyze import router as analyze_router
 from app.api.dependencies import get_anonymizer
-from app.config import Settings, get_settings
+from pydantic import ValidationError
+
+from app.config import Settings, describe_settings_error, get_settings
 from app.vision.anonymizer import AnonymizationError
 
-logger = logging.getLogger("sampatech.ia")
+# Usa o logger do próprio uvicorn: as mensagens saem no mesmo formato ("ERROR:    ...").
+logger = logging.getLogger("uvicorn.error")
+
+
+class ConfigurationError(RuntimeError):
+    """Configuração inválida: o servidor não sobe."""
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     # Fail fast: lê e valida a configuração na subida. Se faltar a IA_API_KEY ou houver
     # valor de exemplo, o servidor nem sobe, e o erro diz qual variável corrigir.
-    get_settings()
+    try:
+        get_settings()
+    except ValidationError as error:
+        summary = describe_settings_error(error)
+        logger.error(summary)
+        # "from None" corta o erro original do pydantic do traceback: a última linha que
+        # aparece no terminal é o resumo legível, sem nenhum valor do .env.
+        raise ConfigurationError(summary) from None
     # Carrega os modelos de anonimização já na subida, para a 1ª requisição não esperar.
     # Se falharem, a API sobe mesmo assim (o /health mostra), mas o /analisar responde 503.
     try:
