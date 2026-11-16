@@ -1,3 +1,6 @@
+from app.vision.anonymizer import PERSON_MODEL
+
+
 def test_health_responde_200_sem_integracoes(client):
     response = client.get("/health")
 
@@ -7,7 +10,8 @@ def test_health_responde_200_sem_integracoes(client):
     assert body["service"] == "sampatech-ia"
     assert body["environment"] == "test"
     assert body["components"] == {
-        "anonymizer": "ready",
+        # Sem o modelo de pessoas (baixado por script), a anonimização fica indisponível: falha segura.
+        "anonymizer": "ready" if PERSON_MODEL.is_file() else "unavailable",
         "dotnet_api": "not_configured",
         "blob_storage": "not_configured",
         "llm": "not_configured",
