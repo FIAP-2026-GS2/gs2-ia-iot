@@ -1,0 +1,27 @@
+# Segredos: nunca versionar (o .env.example vai, sem valores)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Modelos e dados pesados (baixados por script, não versionados)
+models/*.onnx
+models/*.pt
+data/raw/
+data/videos/
+data/frames/
+data/cache/
+
+# Ferramentas locais
+AGENTS.md
+CLAUDE.md
+.vscode/
+.idea/
