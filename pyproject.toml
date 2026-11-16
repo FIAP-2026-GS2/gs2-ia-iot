@@ -1,0 +1,9 @@
+[project]
+name = "sampatech-ia"
+version = "0.1.0"
+description = "Serviço de IA do SampaTech (Global Solution 2026/2, CitizenTech)"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

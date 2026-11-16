@@ -12,9 +12,10 @@ venv/
 .coverage
 htmlcov/
 
-# Modelos e dados pesados (baixados por script, não versionados)
-models/*.onnx
-models/*.pt
+# Modelos de buraco: públicos e pesados, baixados por script (scripts/baixar_modelos.py).
+# O modelo da faixa (models/crosswalk/) é nosso e pequeno: esse vai no repositório.
+models/pothole/
+*.pt
 data/raw/
 data/videos/
 data/frames/
