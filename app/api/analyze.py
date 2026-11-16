@@ -47,7 +47,7 @@ class AnalyzeResponse(BaseModel):
     images: AnalyzeImages
 
 
-def _read_upload(file: UploadFile) -> bytes:
+def read_upload(file: UploadFile) -> bytes:
     if file.content_type and not file.content_type.startswith("image/"):
         raise HTTPException(
             status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
@@ -82,7 +82,7 @@ def analyze(
     # Função comum (def), e não async: o FastAPI roda numa thread separada, então o
     # processamento pesado da imagem não trava as outras requisições.
     started = time.perf_counter()
-    data = _read_upload(file)
+    data = read_upload(file)
     try:
         image = decode_image(data)
     except InvalidImageError as error:

@@ -14,6 +14,7 @@ import logging
 
 from app import __version__
 from app.api.analyze import router as analyze_router
+from app.api.streetlight import router as streetlight_router
 from app.api.dependencies import get_anonymizer
 from pydantic import ValidationError
 
@@ -59,6 +60,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(analyze_router)
+app.include_router(streetlight_router)
 
 ComponentState = Literal["configured", "not_configured"]
 
