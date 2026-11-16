@@ -11,3 +11,6 @@ opencv-python-headless==5.0.0.93
 onnxruntime==1.32.0
 # Detector de placas (YOLOv9-tiny em ONNX). Usamos só o código de inferência; o modelo está em models/anonymizer.
 open-image-models==0.6.0
+
+# Cliente HTTP para o LLM (Groq e Gemini) e, depois, para a API .NET
+httpx==0.28.1
