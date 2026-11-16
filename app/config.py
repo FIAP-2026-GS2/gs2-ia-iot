@@ -11,7 +11,7 @@ import os
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import AnyHttpUrl, Field, SecretStr, field_validator
+from pydantic import AnyHttpUrl, Field, SecretStr, ValidationError, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Trechos que denunciam um valor copiado do .env.example sem trocar.
@@ -33,6 +33,9 @@ class Settings(BaseSettings):
         # Variável vazia no .env conta como "não informada", e não como texto vazio.
         env_ignore_empty=True,
         extra="ignore",
+        # Sem isto, o erro de validação mostra o valor recebido (input_value='...'), e um segredo
+        # recusado (ex.: chave curta) iria parar no terminal e nos logs do ACI.
+        hide_input_in_errors=True,
     )
 
     # Ambiente: muda só o que aparece no /health (local, cloud ou test).
@@ -103,6 +106,18 @@ class Settings(BaseSettings):
     @property
     def llm_fallback_configured(self) -> bool:
         return all((self.llm_fallback_base_url, self.llm_fallback_model, self.llm_fallback_api_key))
+
+
+def describe_settings_error(error: ValidationError) -> str:
+    """Resume o erro de configuração em linhas curtas, com o nome da variável do .env.
+
+    Ex.: "IA_API_KEY: Field required". Nunca inclui o valor recebido.
+    """
+    lines = [
+        f"- {'.'.join(str(part) for part in item['loc']).upper()}: {item['msg']}"
+        for item in error.errors(include_input=False, include_url=False)
+    ]
+    return "Configuração inválida no .env:\n" + "\n".join(lines)
 
 
 @lru_cache

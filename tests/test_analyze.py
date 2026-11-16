@@ -9,7 +9,7 @@ from app.main import app
 from app.vision.anonymizer import AnonymizationError, Anonymizer, Box
 from app.vision.frames import decode_image, encode_jpeg
 from tests.conftest import TEST_API_KEY
-from tests.test_anonymizer import FakeDetector
+from tests.test_anonymizer import FakeDetector, needs_person_model
 
 HEADERS = {"X-API-Key": TEST_API_KEY}
 
@@ -48,7 +48,10 @@ def test_analisa_imagem_e_devolve_json(client, fake_anonymizer):
 
     assert response.status_code == 200
     body = response.json()
-    assert body["anonymization"] == {"faces_blurred": 1, "plates_blurred": 1}
+    assert body["anonymization"]["faces_blurred"] == 1
+    assert body["anonymization"]["heads_blurred"] == 0  # o anonimizador falso não tem detector de pessoas
+    assert body["anonymization"]["plates_blurred"] == 1
+    assert body["anonymization"]["blurred_area_percent"] > 0
     assert body["detections"] == []
     annotated = decode_image(base64.b64decode(body["images"]["annotated_jpeg_base64"]))
     assert annotated.shape == (240, 320, 3)
@@ -60,6 +63,7 @@ def test_formato_imagem_devolve_jpeg(client, fake_anonymizer):
     assert response.status_code == 200
     assert response.headers["content-type"] == "image/jpeg"
     assert response.headers["x-faces-blurred"] == "1"
+    assert response.headers["x-heads-blurred"] == "0"
     assert decode_image(response.content).shape == (240, 320, 3)
 
 
@@ -106,11 +110,14 @@ def test_modelos_ausentes_respondem_503(client):
     assert response.status_code == 503
 
 
+@needs_person_model
 def test_analisa_com_os_modelos_reais(client):
     response = client.post("/analisar", files=_upload(_jpeg(1280, 720)), headers=HEADERS)
 
     assert response.status_code == 200
-    assert response.json()["anonymization"] == {"faces_blurred": 0, "plates_blurred": 0}
+    assert response.json()["anonymization"] == {
+        "faces_blurred": 0, "heads_blurred": 0, "plates_blurred": 0, "blurred_area_percent": 0.0,
+    }
 
 
 def test_falha_de_anonimizacao_nunca_devolve_a_imagem(client):

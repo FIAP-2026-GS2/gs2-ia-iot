@@ -23,8 +23,10 @@ router = APIRouter(tags=["Análise"], dependencies=[Depends(require_api_key)])
 
 
 class AnonymizationSummary(BaseModel):
-    faces_blurred: int = Field(description="Rostos borrados")
+    faces_blurred: int = Field(description="Rostos borrados (pessoas próximas e médias)")
+    heads_blurred: int = Field(description="Cabeças borradas (pessoas de longe, a partir de 60 px de altura)")
     plates_blurred: int = Field(description="Placas borradas")
+    blurred_area_percent: float = Field(description="Quanto da imagem foi coberto por borrão, em %")
 
 
 class DetectionOut(BaseModel):
@@ -60,7 +62,7 @@ def _read_upload(file: UploadFile) -> bytes:
 @router.post(
     "/analisar",
     response_model=AnalyzeResponse,
-    summary="Analisa uma imagem (borra rostos e placas antes de tudo)",
+    summary="Analisa uma imagem (borra cabeças, rostos e placas antes de tudo)",
     responses={
         200: {"content": {"image/jpeg": {}}, "description": "JSON, ou a imagem anotada com formato=imagem"},
         401: {"description": "Chave ausente ou inválida"},
@@ -104,14 +106,19 @@ def analyze(
             media_type="image/jpeg",
             headers={
                 "X-Faces-Blurred": str(len(anonymized.faces)),
+                "X-Heads-Blurred": str(len(anonymized.persons)),
                 "X-Plates-Blurred": str(len(anonymized.plates)),
+                "X-Blurred-Area-Percent": f"{anonymized.blurred_area_ratio * 100:.1f}",
                 "X-Processing-Time-Ms": str(elapsed_ms),
             },
         )
 
     return AnalyzeResponse(
         anonymization=AnonymizationSummary(
-            faces_blurred=len(anonymized.faces), plates_blurred=len(anonymized.plates)
+            faces_blurred=len(anonymized.faces),
+            heads_blurred=len(anonymized.persons),
+            plates_blurred=len(anonymized.plates),
+            blurred_area_percent=round(anonymized.blurred_area_ratio * 100, 1),
         ),
         detections=[
             DetectionOut(category=a.label, confidence=a.confidence, bbox=[a.x1, a.y1, a.x2, a.y2])
