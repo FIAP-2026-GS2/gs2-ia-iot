@@ -25,6 +25,7 @@ data/frames/
 data/comparacao/
 data/amostras/
 data/cache/
+data/eval/
 
 # Ferramentas locais
 AGENTS.md
