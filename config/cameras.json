@@ -1,0 +1,52 @@
+{
+  "_comentario": "Uma entrada por câmera (chave = cameraCode da API .NET). streetlights: retângulo [x1, y1, x2, y2] na cabeça de cada luminária, marcado à mão num frame de tamanho frame_size [largura, altura]. Se o frame chegar em outra resolução, o retângulo é ajustado na proporção. As 5 câmeras abaixo são câmeras públicas da CET usadas só para teste. pothole_ignore: objetos fixos que parecem buraco (tampa de bueiro, grelha), com o motivo. road (opcional): polígono [[x, y], ...] da pista; caixa de buraco com o centro fora dele é ignorada.",
+  "cameras": {
+    "CET-BRASIL": {
+      "name": "Av. Brasil (CET, teste)",
+      "frame_size": [890, 666],
+      "streetlights": [
+        {"id": "p1", "roi": [649, 37, 669, 57]},
+        {"id": "p2", "roi": [756, 69, 776, 89]}
+      ]
+    },
+    "CET-CIDADE-JARDIM": {
+      "name": "Av. Cidade Jardim (CET, teste)",
+      "frame_size": [891, 666],
+      "streetlights": [
+        {"id": "p1", "roi": [100, 30, 120, 50]},
+        {"id": "p2", "roi": [108, 110, 128, 130]}
+      ],
+      "pothole_ignore": [
+        {"box": [790, 456, 855, 508], "motivo": "tampa metálica na pista"}
+      ]
+    },
+    "CET-CONSOLACAO": {
+      "name": "R. da Consolação (CET, teste)",
+      "frame_size": [895, 669],
+      "streetlights": [
+        {"id": "p1", "roi": [308, 82, 328, 102]},
+        {"id": "p2", "roi": [409, 122, 429, 142]},
+        {"id": "p3", "roi": [687, 103, 707, 123]}
+      ],
+      "pothole_ignore": [
+        {"box": [226, 559, 301, 615], "motivo": "tampa de bueiro perto da faixa de pedestres"}
+      ]
+    },
+    "CET-IGUATEMI": {
+      "name": "Av. Brig. Faria Lima / Iguatemi (CET, teste)",
+      "frame_size": [890, 669],
+      "streetlights": [
+        {"id": "p1", "roi": [498, 0, 518, 17]},
+        {"id": "p2", "roi": [87, 0, 107, 18]}
+      ],
+      "pothole_ignore": [
+        {"box": [694, 424, 745, 470], "motivo": "tampa de bueiro na faixa da direita"}
+      ]
+    },
+    "CET-IBIRAPUERA": {
+      "name": "Av. Ibirapuera (CET, teste; sem luminária no quadro)",
+      "frame_size": [893, 667],
+      "streetlights": []
+    }
+  }
+}
