@@ -14,3 +14,6 @@ open-image-models==0.6.0
 
 # Cliente HTTP para o LLM (Groq e Gemini) e, depois, para a API .NET
 httpx==0.28.1
+
+# Azure Blob Storage: o frame já borrado sobe aqui antes do POST /api/captures
+azure-storage-blob==12.31.1
