@@ -15,8 +15,10 @@
 set -euo pipefail
 export MSYS_NO_PATHCONV=1   # no Git Bash, impede que "/subscriptions/..." vire caminho do Windows
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENV_FILE="$ROOT/.env.cloud"
+# Trabalha sempre na raiz do repositório, com caminhos relativos: o git e o docker são programas
+# do Windows e não entendem "/c/Users/..." (o MSYS_NO_PATHCONV acima desliga a tradução).
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+ENV_FILE=".env.cloud"
 
 info() { printf '\n==> %s\n' "$*"; }
 ok()   { printf '    ok: %s\n' "$*"; }
@@ -34,7 +36,7 @@ for nome in AZ_RESOURCE_GROUP ACR_NAME ACI_NAME ACI_DNS_LABEL IA_API_KEY; do
     [ -n "${!nome:-}" ] || erro "preencha $nome no .env.cloud."
 done
 [ "${#IA_API_KEY}" -ge 16 ] || erro "IA_API_KEY precisa de 16 ou mais caracteres."
-if [ -f "$ROOT/.env" ] && grep -qxF "IA_API_KEY=$IA_API_KEY" "$ROOT/.env" 2>/dev/null; then
+if [ -f .env ] && grep -qxF "IA_API_KEY=$IA_API_KEY" .env 2>/dev/null; then
     erro "a IA_API_KEY da nuvem é igual à do seu .env local. Gere outra (python -c \"import secrets; print(secrets.token_urlsafe(32))\")."
 fi
 ACI_CPU="${ACI_CPU:-1}"
@@ -64,8 +66,8 @@ az acr show --name "$ACR_NAME" -o none 2>/dev/null || erro "o ACR $ACR_NAME não
 AZ_LOCATION="${AZ_LOCATION:-$(az_tsv group show --name "$AZ_RESOURCE_GROUP" --query location)}"
 
 # Tag = commit atual. Avisa se há mudança sem commit (a imagem não bateria com o GitHub).
-TAG="$(git -C "$ROOT" rev-parse --short HEAD)"
-if [ -n "$(git -C "$ROOT" status --porcelain)" ]; then
+TAG="$(git rev-parse --short HEAD)"
+if [ -n "$(git status --porcelain)" ]; then
     echo "    aviso: há mudanças sem commit; a imagem leva o que está na pasta agora."
     TAG="$TAG-local"
 fi
@@ -77,11 +79,11 @@ ACR_SERVER="$(az_tsv acr show --name "$ACR_NAME" --query loginServer)"
 if [ "${1:-}" = "--remoto" ]; then
     info "Build da imagem dentro da Azure ($IMAGE_REPO:$TAG): leva de 3 a 6 minutos"
     az acr build --registry "$ACR_NAME" --image "$IMAGE_REPO:$TAG" --image "$IMAGE_REPO:latest" \
-        --file "$ROOT/Dockerfile" "$ROOT" --only-show-errors -o none
+        --file Dockerfile . --only-show-errors -o none
 else
     docker info >/dev/null 2>&1 || erro "o Docker não está rodando. Abra o Docker Desktop (ou use --remoto)."
     info "Build local da imagem ($IMAGE_REPO:$TAG): a primeira vez leva de 3 a 6 minutos"
-    docker build -t "$ACR_SERVER/$IMAGE_REPO:$TAG" -t "$ACR_SERVER/$IMAGE_REPO:latest" "$ROOT"
+    docker build -t "$ACR_SERVER/$IMAGE_REPO:$TAG" -t "$ACR_SERVER/$IMAGE_REPO:latest" .
     info "Enviando ao ACR $ACR_SERVER"
     az acr login --name "$ACR_NAME" --only-show-errors
     docker push "$ACR_SERVER/$IMAGE_REPO:$TAG"
