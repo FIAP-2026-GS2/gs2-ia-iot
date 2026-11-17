@@ -24,13 +24,15 @@ RUN pip install -r requirements.txt
 COPY app/ app/
 COPY scripts/ scripts/
 COPY models/ models/
+COPY config/ config/
 
 # O detector de pessoas (114 MB) não está no Git: baixa aqui, conferindo o SHA-256.
 # Se o hash não bater, o build falha (melhor do que subir sem o borrão completo).
 RUN python -m scripts.baixar_modelos
 
 # Usuário sem privilégio de root.
-RUN useradd --uid 10001 --no-create-home ia
+# data/cache guarda a referência do meio-dia do poste: é a única pasta onde o app escreve.
+RUN useradd --uid 10001 --no-create-home ia && mkdir -p data/cache && chown -R ia data
 USER ia
 
 EXPOSE 8000

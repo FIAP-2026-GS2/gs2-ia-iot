@@ -14,6 +14,9 @@ COLORS = {
     "FAIXA_APAGADA": (0, 215, 255),  # amarelo
     "POSTE_APAGADO": (255, 128, 0),  # azul
     "VIA_ALAGADA": (255, 255, 0),    # ciano
+    "POSTE_ACESO": (0, 200, 0),      # verde: luminária conferida e acesa
+    "POSTE_INCERTO": (160, 160, 160),  # cinza
+    "DESCARTADO": (128, 128, 128),     # cinza: candidato que o filtro tirou
 }
 DEFAULT_COLOR = (255, 255, 255)
 
@@ -26,6 +29,7 @@ class Annotation:
     y1: int
     x2: int
     y2: int
+    tag: str = ""  # opcional: número mostrado antes do nome (o LLM usa para citar o retângulo)
 
 
 def annotate(image: np.ndarray, annotations: list[Annotation]) -> np.ndarray:
@@ -36,10 +40,12 @@ def annotate(image: np.ndarray, annotations: list[Annotation]) -> np.ndarray:
     for item in annotations:
         color = COLORS.get(item.label, DEFAULT_COLOR)
         cv2.rectangle(result, (item.x1, item.y1), (item.x2, item.y2), color, thickness)
-        text = f"{item.label} {item.confidence:.0%}"
+        text = f"{item.tag + ' ' if item.tag else ''}{item.label} {item.confidence:.0%}"
         (text_w, text_h), baseline = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, font_scale, thickness)
         top = max(0, item.y1 - text_h - baseline - 4)
-        cv2.rectangle(result, (item.x1, top), (item.x1 + text_w + 6, top + text_h + baseline + 4), color, -1)
-        cv2.putText(result, text, (item.x1 + 3, top + text_h + 2), cv2.FONT_HERSHEY_SIMPLEX,
+        # Caixa perto da borda direita: a etiqueta recua para dentro da imagem, sem cortar o texto.
+        left = max(0, min(item.x1, image.shape[1] - text_w - 6))
+        cv2.rectangle(result, (left, top), (left + text_w + 6, top + text_h + baseline + 4), color, -1)
+        cv2.putText(result, text, (left + 3, top + text_h + 2), cv2.FONT_HERSHEY_SIMPLEX,
                     font_scale, (0, 0, 0), thickness, cv2.LINE_AA)
     return result
