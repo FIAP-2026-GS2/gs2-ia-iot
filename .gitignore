@@ -26,6 +26,8 @@ data/comparacao/
 data/amostras/
 data/cache/
 data/eval/
+# .txt de entrega do portal (vai pelo portal, não pelo Git)
+data/entrega/
 
 # Ferramentas locais
 AGENTS.md
