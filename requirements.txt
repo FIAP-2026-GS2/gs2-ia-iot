@@ -1,0 +1,22 @@
+# Dependências de produção (as que entram na imagem Docker). Sem PyTorch: só ONNX Runtime.
+fastapi==0.163.1
+uvicorn[standard]==0.54.0
+pydantic==2.14.3
+pydantic-settings==2.16.3
+python-multipart==0.0.33
+
+# Visão computacional
+numpy==2.5.5
+opencv-python-headless==5.0.0.93
+onnxruntime==1.32.0
+# Detector de placas (YOLOv9-tiny em ONNX). Usamos só o código de inferência; o modelo está em models/anonymizer.
+open-image-models==0.6.0
+
+# Cliente HTTP para o LLM (Groq e Gemini) e, depois, para a API .NET
+httpx==0.28.1
+
+# Azure Blob Storage: o frame já borrado sobe aqui antes do POST /api/captures
+azure-storage-blob==12.31.1
+
+# Agendador: consulta GET /api/schedules/due de tempos em tempos (app/scheduler.py)
+apscheduler==3.11.3

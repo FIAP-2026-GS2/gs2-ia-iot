@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+!.env.cloud.example
 
 # Python
 __pycache__/
@@ -12,13 +13,19 @@ venv/
 .coverage
 htmlcov/
 
-# Modelos e dados pesados (baixados por script, não versionados)
-models/*.onnx
-models/*.pt
+# Modelos de buraco: públicos e pesados, baixados por script (scripts/baixar_modelos.py).
+# O modelo da faixa (models/crosswalk/) é nosso e pequeno: esse vai no repositório.
+models/pothole/
+# Detector de pessoas (114 MB, acima do limite de 100 MB do GitHub): também baixado por script.
+models/anonymizer/rf-detr-nano-384-coco.onnx
+*.pt
 data/raw/
 data/videos/
 data/frames/
+data/comparacao/
+data/amostras/
 data/cache/
+data/eval/
 
 # Ferramentas locais
 AGENTS.md

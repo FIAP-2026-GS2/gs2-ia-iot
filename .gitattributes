@@ -1,0 +1,9 @@
+# Quebra de linha padrão LF no repositório (o Docker e os scripts .sh rodam em Linux).
+* text=auto eol=lf
+
+# Arquivos binários: o Git nunca converte nem tenta mostrar diferença de texto.
+*.onnx binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.mp4 binary
