@@ -1,0 +1,20 @@
+# Segredos nunca entram na imagem
+.env
+.env.*
+
+# O que não precisa rodar em produção
+.git/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+tests/
+docs/
+data/
+*.md
+!models/README.md
+
+# Baixado dentro do build (com conferência do SHA-256): não precisa subir no contexto
+models/anonymizer/rf-detr-nano-384-coco.onnx
+models/pothole/

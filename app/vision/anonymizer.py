@@ -32,6 +32,10 @@ PERSON_MODEL = MODELS_DIR / "rf-detr-nano-384-coco.onnx"
 
 # Limiares baixos de propósito (privacidade > precisão). O padrão do YuNet é 0,9 e o das placas, 0,25.
 FACE_SCORE_THRESHOLD = 0.6
+# Confirmação dupla do rosto. Medido: rostos reais deram 0,88 a 0,93; os "rostos" falsos das câmeras
+# da CET (desenho na faixa, asfalto à noite) deram 0,69 a 0,79. Nota a partir de 0,85 borra sempre.
+# Abaixo disso, só borra se o detector de pessoas também viu uma pessoa no mesmo lugar.
+FACE_CONFIDENT_SCORE = 0.85
 PLATE_SCORE_THRESHOLD = 0.2
 # O padrão do RF-DETR é 0,5. Mais baixo pega pedestres pequenos e parcialmente escondidos.
 PERSON_SCORE_THRESHOLD = 0.3
@@ -307,6 +311,8 @@ class AnonymizationResult:
     faces: list[Box]
     plates: list[Box]
     persons: list[Box] = field(default_factory=list)
+    # "Rostos" de nota média sem pessoa embaixo: não borrados, mas contados (nada some em silêncio).
+    unconfirmed_faces: list[Box] = field(default_factory=list)
 
     @property
     def blurred_area_ratio(self) -> float:
@@ -334,12 +340,40 @@ class Anonymizer:
             faces = self._face_detector.detect(image)
             plates = self._plate_detector.detect(image)
             persons = self._person_detector.detect(image) if self._person_detector else []
+            faces, unconfirmed = confirm_faces(faces, persons, has_person_detector=self._person_detector is not None,
+                                               width=image.shape[1], height=image.shape[0])
             blurred = blur_regions(image, faces + plates + persons)
         except AnonymizationError:
             raise
         except Exception as error:  # qualquer falha do detector bloqueia o envio
             raise AnonymizationError(f"Falha ao anonimizar a imagem: {error}") from error
-        return AnonymizationResult(blurred, faces, plates, persons)
+        return AnonymizationResult(blurred, faces, plates, persons, unconfirmed)
+
+
+def _overlaps(a: Box, b: Box) -> bool:
+    return a.x1 < b.x2 and b.x1 < a.x2 and a.y1 < b.y2 and b.y1 < a.y2
+
+
+def confirm_faces(faces: list[Box], heads: list[Box], *, has_person_detector: bool,
+                  width: int, height: int) -> tuple[list[Box], list[Box]]:
+    """Separa os rostos em (borrar, descartar) pela confirmação dupla.
+
+    - nota >= FACE_CONFIDENT_SCORE: borra (rosto nítido, o YuNet quase não erra aqui);
+    - nota menor: borra só se encostar na cabeça de uma pessoa achada pelo RF-DETR
+      (desenho no chão não tem corpo embaixo);
+    - sem detector de pessoas não há como confirmar: borra tudo (privacidade em 1º lugar).
+    """
+    if not has_person_detector:
+        return faces, []
+    # A cabeça cresce 15% (a mesma margem do borrão) para tolerar a diferença entre os dois modelos.
+    grown = [head.expanded(BOX_MARGIN, width, height) for head in heads]
+    keep, drop = [], []
+    for face in faces:
+        if face.score >= FACE_CONFIDENT_SCORE or any(_overlaps(face, head) for head in grown):
+            keep.append(face)
+        else:
+            drop.append(face)
+    return keep, drop
 
 
 def build_default_anonymizer() -> Anonymizer:

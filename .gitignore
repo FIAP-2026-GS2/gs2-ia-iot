@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+!.env.cloud.example
 
 # Python
 __pycache__/
@@ -24,6 +25,7 @@ data/frames/
 data/comparacao/
 data/amostras/
 data/cache/
+data/eval/
 
 # Ferramentas locais
 AGENTS.md

@@ -339,3 +339,43 @@ def test_rosto_menor_que_o_minimo_nao_e_borrado():
     assert len(detector.detect(np.zeros((240, 320, 3), np.uint8))) == 1
     detector._min_width = 41
     assert detector.detect(np.zeros((240, 320, 3), np.uint8)) == []
+
+
+# ---------- confirmação dupla do rosto ----------
+
+def _anonymizer_com_pessoas(faces, heads):
+    return Anonymizer(FakeDetector(faces), FakeDetector(), FakeDetector(heads))
+
+
+def test_rosto_de_nota_alta_borra_mesmo_sem_pessoa():
+    result = _anonymizer_com_pessoas([Box(10, 10, 60, 60, 0.9)], []).anonymize(_checkerboard())
+
+    assert len(result.faces) == 1 and result.unconfirmed_faces == []
+
+
+def test_rosto_de_nota_media_com_pessoa_embaixo_borra():
+    face = Box(20, 20, 40, 40, 0.7)
+    head = Box(15, 10, 45, 45, 0.8)  # cabeça da pessoa achada pelo RF-DETR, no mesmo lugar
+
+    result = _anonymizer_com_pessoas([face], [head]).anonymize(_checkerboard())
+
+    assert result.faces == [face] and result.unconfirmed_faces == []
+
+
+def test_rosto_de_nota_media_sem_pessoa_nao_borra_e_fica_registrado():
+    # O desenho na faixa do Ibirapuera: nota 0,69, nenhum corpo embaixo.
+    drawing = Box(120, 120, 180, 190, 0.69)
+    image = _checkerboard()
+
+    result = _anonymizer_com_pessoas([drawing], [Box(10, 10, 40, 40, 0.8)]).anonymize(image)
+
+    assert result.faces == [] and result.unconfirmed_faces == [drawing]
+    assert np.array_equal(result.image[120:190, 120:180], image[120:190, 120:180])  # não borrou
+
+
+def test_sem_detector_de_pessoas_borra_todo_rosto():
+    anonymizer = Anonymizer(FakeDetector([Box(10, 10, 60, 60, 0.65)]), FakeDetector())
+
+    result = anonymizer.anonymize(_checkerboard())
+
+    assert len(result.faces) == 1 and result.unconfirmed_faces == []

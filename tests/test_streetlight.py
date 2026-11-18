@@ -163,7 +163,7 @@ def test_sem_llm_configurado_usa_regra_de_brilho(client, use):
     body = client.post("/verificar-poste", files=_upload(night(True)), headers=HEADERS).json()
 
     assert body["method"] == "brightness"
-    assert body["motivo_sem_llm"] == "LLM não configurado no .env"
+    assert body["motivo_sem_llm"] == "LLM não configurado (variáveis LLM_*)"
 
 
 def test_sem_borrao_a_foto_nao_vai_ao_llm(client, use):

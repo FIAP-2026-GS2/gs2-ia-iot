@@ -116,7 +116,8 @@ def test_analisa_com_os_modelos_reais(client):
 
     assert response.status_code == 200
     assert response.json()["anonymization"] == {
-        "faces_blurred": 0, "heads_blurred": 0, "plates_blurred": 0, "blurred_area_percent": 0.0,
+        "faces_blurred": 0, "heads_blurred": 0, "plates_blurred": 0, "faces_unconfirmed": 0,
+            "blurred_area_percent": 0.0,
     }
 
 

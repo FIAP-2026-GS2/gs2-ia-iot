@@ -14,6 +14,7 @@ import logging
 
 from app import __version__
 from app.api.analyze import router as analyze_router
+from app.api.scheduler import router as scheduler_router
 from app.api.streetlight import router as streetlight_router
 from app.api.dependencies import get_anonymizer
 from pydantic import ValidationError
@@ -30,11 +31,11 @@ class ConfigurationError(RuntimeError):
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def lifespan(application: FastAPI):
     # Fail fast: lê e valida a configuração na subida. Se faltar a IA_API_KEY ou houver
     # valor de exemplo, o servidor nem sobe, e o erro diz qual variável corrigir.
     try:
-        get_settings()
+        settings = get_settings()
     except ValidationError as error:
         summary = describe_settings_error(error)
         logger.error(summary)
@@ -47,7 +48,16 @@ async def lifespan(_: FastAPI):
         get_anonymizer()
     except AnonymizationError as error:
         logger.error("Anonimização indisponível: %s", error)
+    # Agendador: só com SCHEDULER_ENABLED=true (no local e nos testes fica desligado).
+    application.state.scheduler = None
+    if settings.scheduler_enabled:
+        from app.scheduler import FrameScheduler
+
+        application.state.scheduler = FrameScheduler(settings)
+        application.state.scheduler.start()
     yield
+    if application.state.scheduler is not None:
+        application.state.scheduler.stop()
 
 
 app = FastAPI(
@@ -61,6 +71,7 @@ app = FastAPI(
 )
 app.include_router(analyze_router)
 app.include_router(streetlight_router)
+app.include_router(scheduler_router)
 
 ComponentState = Literal["configured", "not_configured"]
 

@@ -1,0 +1,28 @@
+{
+  "_comentario": "Fotos locais de teste que o scripts/subir_fontes_demo.py borra e sobe ao Blob como fonte de cada câmera (demo/<câmera>/<período>.jpg). Uma entrada por câmera do config/cameras.json, com a foto de 'dia' (12:00) e/ou de 'noite' (00:00). Os arquivos ficam em data/, fora do Git. As câmeras CET-* usam prints de câmeras públicas da CET, só para teste; DEMO-BURACO usa uma foto do dataset Potholes Detection (Roboflow, CC BY 4.0).",
+  "cameras": {
+    "CET-BRASIL": {
+      "dia": "data/amostras/cet/cet_brasil_dia_1.png",
+      "noite": "data/amostras/cet/cet_brasil_noite_1.png"
+    },
+    "CET-CIDADE-JARDIM": {
+      "dia": "data/amostras/cet/cet_cidade_jardim_dia_1.png",
+      "noite": "data/amostras/cet/cet_cidade_jardim_noite_1.png"
+    },
+    "CET-CONSOLACAO": {
+      "dia": "data/amostras/cet/cet_consolacao_dia_1.png",
+      "noite": "data/amostras/cet/cet_consolacao_noite_1.png"
+    },
+    "CET-IGUATEMI": {
+      "dia": "data/amostras/cet/cet_iguatemi_dia_1.png",
+      "noite": "data/amostras/cet/cet_iguatemi_noite_1.png"
+    },
+    "CET-IBIRAPUERA": {
+      "dia": "data/amostras/cet/cet_ibirapuera_dia_1.png",
+      "noite": "data/amostras/cet/cet_ibirapuera_noite_1.png"
+    },
+    "DEMO-BURACO": {
+      "dia": "data/eval/pothole/images/0040_jpg.rf.ce9dde51c6f4e3fdfb4ad43b0ab1a623.jpg"
+    }
+  }
+}

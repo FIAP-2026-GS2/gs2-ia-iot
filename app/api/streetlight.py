@@ -102,7 +102,7 @@ def verify_streetlight(
     llm_info = None
     motivo_sem_llm = None
     if llm is None:
-        motivo_sem_llm = "LLM não configurado no .env"
+        motivo_sem_llm = "LLM não configurado (variáveis LLM_*)"
     else:
         try:
             answer = llm.ask_json(STREETLIGHT_SYSTEM, STREETLIGHT_PROMPT, encode_jpeg(shrink(anonymized.image)))
