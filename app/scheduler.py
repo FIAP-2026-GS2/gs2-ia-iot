@@ -14,6 +14,11 @@ Fonte do frame: não temos o stream do Smart Sampa. Cada câmera aponta, no conf
   o frame é o do segundo do dia (em São Paulo) do slot, contado em loop no vídeo;
 - "source": {"dia": "foto.png", "noite": "foto.png"}  → uma imagem (ou vídeo) para cada período,
   usada com as fotos de teste da CET (dia para as 12:00, noite para as 00:00).
+
+Cada caminho pode ser um arquivo local ou "blob:<nome no container>". As fotos de demonstração
+ficam no Blob (já borradas, por scripts/subir_fontes_demo.py): assim funcionam num clone limpo e
+no container da nuvem, sem as fotos irem para o GitHub. Na 1ª leitura, o arquivo é baixado para
+data/cache/fontes/ e reaproveitado nas próximas.
 """
 
 import logging
@@ -39,11 +44,39 @@ class SourceError(RuntimeError):
     """A câmera não tem fonte configurada, ou o arquivo não abre."""
 
 
+BLOB_SCHEME = "blob:"
+
+
+@dataclass(frozen=True)
+class BlobFile:
+    """Um arquivo de fonte guardado no Blob, baixado para o disco só quando for usado."""
+
+    storage: Any        # BlobStorage (Any para não importar o SDK do Azure aqui)
+    name: str           # nome no container, ex.: demo/CET-CONSOLACAO/dia.jpg
+    cache: Path         # onde a cópia local fica
+
+    def local(self) -> Path:
+        if not self.cache.is_file():
+            data = self.storage.download(self.name)
+            if data is None:
+                raise SourceError(f"não está no Blob: {self.name} (rode python -m scripts.subir_fontes_demo)")
+            self.cache.parent.mkdir(parents=True, exist_ok=True)
+            partial = self.cache.with_suffix(self.cache.suffix + ".part")
+            partial.write_bytes(data)
+            partial.replace(self.cache)  # nunca fica um arquivo pela metade com o nome certo
+        return self.cache
+
+    @property
+    def suffix(self) -> str:
+        return Path(self.name).suffix
+
+
 def is_daytime(moment: datetime) -> bool:
     return 6 <= moment.astimezone(SAO_PAULO).hour < 18
 
 
-def _read(path: Path, at_seconds: float) -> np.ndarray:
+def _read(location: "Path | BlobFile", at_seconds: float) -> np.ndarray:
+    path = location.local() if isinstance(location, BlobFile) else location
     if not path.is_file():
         raise SourceError(f"arquivo da fonte não encontrado: {path}")
     if path.suffix.lower() in VIDEO_SUFFIXES:
@@ -71,9 +104,9 @@ class FrameSource:
     """De onde sai o frame de uma câmera (no lugar do stream real do Smart Sampa)."""
 
     camera_code: str
-    video: Path | None = None
-    day: Path | None = None
-    night: Path | None = None
+    video: "Path | BlobFile | None" = None
+    day: "Path | BlobFile | None" = None
+    night: "Path | BlobFile | None" = None
 
     def frame_at(self, slot_at: datetime) -> np.ndarray:
         local = slot_at.astimezone(SAO_PAULO)
@@ -86,16 +119,27 @@ class FrameSource:
         return _read(path, second_of_day)
 
 
-def load_sources(config: dict[str, Any], base: Path) -> dict[str, FrameSource]:
+def load_sources(config: dict[str, Any], base: Path, blob: Any = None,
+                 cache_dir: Path = Path("data/cache/fontes")) -> dict[str, FrameSource]:
     """Lê o campo "source" de cada câmera do config/cameras.json (câmera sem "source" fica de fora)."""
+
+    def location(value: str | None) -> "Path | BlobFile | None":
+        if not value:
+            return None
+        if value.startswith(BLOB_SCHEME):
+            name = value[len(BLOB_SCHEME):]
+            if blob is None:
+                raise SourceError(f"{value} pede o Blob, mas BLOB_CONNECTION_STRING não está configurada")
+            return BlobFile(blob, name, cache_dir / name)
+        return base / value
+
     sources = {}
     for code, data in (config.get("cameras") or {}).items():
         source = data.get("source")
         if isinstance(source, str):
-            sources[code] = FrameSource(code, video=base / source)
+            sources[code] = FrameSource(code, video=location(source))
         elif isinstance(source, dict):
-            day, night = source.get("dia"), source.get("noite")
-            sources[code] = FrameSource(code, day=base / day if day else None, night=base / night if night else None)
+            sources[code] = FrameSource(code, day=location(source.get("dia")), night=location(source.get("noite")))
     return sources
 
 
@@ -179,7 +223,7 @@ def build_runner(settings) -> tuple[Callable, dict[str, FrameSource], Callable]:
     dotnet, blob = build_clients(settings)
     type_ids = issue_type_ids(settings)
     config_path = Path(settings.cameras_config_path)
-    sources = load_sources(json.loads(config_path.read_text(encoding="utf-8")), Path.cwd())
+    sources = load_sources(json.loads(config_path.read_text(encoding="utf-8")), Path.cwd(), blob)
     reference_store = BlobReferenceStore(blob)
     llm = llm_dependency(settings)
 

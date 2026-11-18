@@ -67,6 +67,28 @@ class BlobStorage:
         url = self.container.get_blob_client(name).url
         return name.rsplit("/", 1)[-1], url, hashlib.sha256(jpeg).hexdigest()
 
+    # ---------- arquivos com nome livre (sem o prefixo): as fontes de demonstração ----------
+
+    def upload(self, name: str, data: bytes, content_type: str) -> None:
+        from azure.storage.blob import ContentSettings
+
+        try:
+            self.container.upload_blob(name, data, overwrite=True,
+                                       content_settings=ContentSettings(content_type=content_type))
+        except Exception as error:
+            raise BlobError(f"Falha ao enviar {name} ao Blob: {type(error).__name__}") from error
+
+    def download(self, name: str) -> bytes | None:
+        """Bytes do arquivo, ou None se ele não existir no container."""
+        from azure.core.exceptions import ResourceNotFoundError
+
+        try:
+            return self.container.download_blob(name).readall()
+        except ResourceNotFoundError:
+            return None
+        except Exception as error:
+            raise BlobError(f"Falha ao ler {name} do Blob: {type(error).__name__}") from error
+
 
 class BlobReferenceStore:
     """Mesma interface do LocalReferenceStore, mas no Blob: sobrevive a um novo deploy do ACI."""

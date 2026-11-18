@@ -123,3 +123,47 @@ def test_agendador_desligado_por_padrao(client):
 
 def test_agendador_exige_a_chave(client):
     assert client.get("/agendador").status_code == 401
+
+
+# ---------- fonte no Blob ----------
+
+class FakeStorage:
+    """Imita o BlobStorage: guarda bytes num dicionário e conta os downloads."""
+
+    def __init__(self, files: dict[str, bytes]):
+        self.files, self.downloads = files, 0
+
+    def download(self, name):
+        self.downloads += 1
+        return self.files.get(name)
+
+
+def _jpeg(value):
+    return cv2.imencode(".jpg", np.full((60, 80, 3), value, dtype=np.uint8))[1].tobytes()
+
+
+def test_fonte_no_blob_baixa_uma_vez_e_reaproveita(tmp_path):
+    storage = FakeStorage({"demo/CAM-1/dia.jpg": _jpeg(200), "demo/CAM-1/noite.jpg": _jpeg(20)})
+    config = {"cameras": {"CAM-1": {"source": {"dia": "blob:demo/CAM-1/dia.jpg", "noite": "blob:demo/CAM-1/noite.jpg"}}}}
+    source = load_sources(config, tmp_path, storage, cache_dir=tmp_path / "cache")["CAM-1"]
+
+    assert source.frame_at(NOON_SP).mean() == pytest.approx(200, abs=3)
+    assert source.frame_at(NOON_SP).mean() == pytest.approx(200, abs=3)
+    assert source.frame_at(MIDNIGHT_SP).mean() == pytest.approx(20, abs=3)
+    assert storage.downloads == 2  # dia e noite, uma vez cada: a 2ª leitura do dia veio do cache
+    assert (tmp_path / "cache" / "demo" / "CAM-1" / "dia.jpg").is_file()
+
+
+def test_fonte_no_blob_que_nao_existe_diz_o_que_fazer(tmp_path):
+    config = {"cameras": {"CAM-1": {"source": {"dia": "blob:demo/CAM-1/dia.jpg"}}}}
+    source = load_sources(config, tmp_path, FakeStorage({}), cache_dir=tmp_path / "cache")["CAM-1"]
+
+    with pytest.raises(SourceError, match="subir_fontes_demo"):
+        source.frame_at(NOON_SP)
+
+
+def test_fonte_no_blob_sem_blob_configurado_falha_na_hora(tmp_path):
+    config = {"cameras": {"CAM-1": {"source": {"dia": "blob:demo/CAM-1/dia.jpg"}}}}
+
+    with pytest.raises(SourceError, match="BLOB_CONNECTION_STRING"):
+        load_sources(config, tmp_path)

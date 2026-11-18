@@ -1,8 +1,8 @@
 {
-  "_comentario": "Uma entrada por câmera (chave = cameraCode da API .NET). streetlights: retângulo [x1, y1, x2, y2] na cabeça de cada luminária, marcado à mão num frame de tamanho frame_size [largura, altura]. Se o frame chegar em outra resolução, o retângulo é ajustado na proporção. As 5 câmeras abaixo são câmeras públicas da CET usadas só para teste. pothole_ignore: objetos fixos que parecem buraco (tampa de bueiro, grelha), com o motivo. source: de onde o agendador tira o frame no lugar do stream do Smart Sampa, um vídeo em loop (\"video.mp4\") ou uma imagem por período ({\"dia\": ..., \"noite\": ...}). road (opcional): polígono [[x, y], ...] da pista; caixa de buraco com o centro fora dele é ignorada.",
+  "_comentario": "Uma entrada por câmera (chave = cameraCode da API .NET). streetlights: retângulo [x1, y1, x2, y2] na cabeça de cada luminária, marcado à mão num frame de tamanho frame_size [largura, altura]. Se o frame chegar em outra resolução, o retângulo é ajustado na proporção. As 5 câmeras abaixo são câmeras públicas da CET usadas só para teste. pothole_ignore: objetos fixos que parecem buraco (tampa de bueiro, grelha), com o motivo. source: de onde o agendador tira o frame no lugar do stream do Smart Sampa, um vídeo em loop (\"video.mp4\") ou uma imagem por período ({\"dia\": ..., \"noite\": ...}); cada caminho pode ser local ou \"blob:<nome>\" (fotos de demonstração já borradas, subidas por scripts/subir_fontes_demo.py). road (opcional): polígono [[x, y], ...] da pista; caixa de buraco com o centro fora dele é ignorada.",
   "cameras": {
     "CET-BRASIL": {
-      "source": {"dia": "data/amostras/cet/cet_brasil_dia_1.png", "noite": "data/amostras/cet/cet_brasil_noite_1.png"},
+      "source": {"dia": "blob:demo/CET-BRASIL/dia.jpg", "noite": "blob:demo/CET-BRASIL/noite.jpg"},
       "name": "Av. Brasil (CET, teste)",
       "frame_size": [890, 666],
       "streetlights": [
@@ -11,7 +11,7 @@
       ]
     },
     "CET-CIDADE-JARDIM": {
-      "source": {"dia": "data/amostras/cet/cet_cidade_jardim_dia_1.png", "noite": "data/amostras/cet/cet_cidade_jardim_noite_1.png"},
+      "source": {"dia": "blob:demo/CET-CIDADE-JARDIM/dia.jpg", "noite": "blob:demo/CET-CIDADE-JARDIM/noite.jpg"},
       "name": "Av. Cidade Jardim (CET, teste)",
       "frame_size": [891, 666],
       "streetlights": [
@@ -23,7 +23,7 @@
       ]
     },
     "CET-CONSOLACAO": {
-      "source": {"dia": "data/amostras/cet/cet_consolacao_dia_1.png", "noite": "data/amostras/cet/cet_consolacao_noite_1.png"},
+      "source": {"dia": "blob:demo/CET-CONSOLACAO/dia.jpg", "noite": "blob:demo/CET-CONSOLACAO/noite.jpg"},
       "name": "R. da Consolação (CET, teste)",
       "frame_size": [895, 669],
       "streetlights": [
@@ -36,7 +36,7 @@
       ]
     },
     "CET-IGUATEMI": {
-      "source": {"dia": "data/amostras/cet/cet_iguatemi_dia_1.png", "noite": "data/amostras/cet/cet_iguatemi_noite_1.png"},
+      "source": {"dia": "blob:demo/CET-IGUATEMI/dia.jpg", "noite": "blob:demo/CET-IGUATEMI/noite.jpg"},
       "name": "Av. Brig. Faria Lima / Iguatemi (CET, teste)",
       "frame_size": [890, 669],
       "streetlights": [
@@ -48,7 +48,7 @@
       ]
     },
     "CET-IBIRAPUERA": {
-      "source": {"dia": "data/amostras/cet/cet_ibirapuera_dia_1.png", "noite": "data/amostras/cet/cet_ibirapuera_noite_1.png"},
+      "source": {"dia": "blob:demo/CET-IBIRAPUERA/dia.jpg", "noite": "blob:demo/CET-IBIRAPUERA/noite.jpg"},
       "name": "Av. Ibirapuera (CET, teste; sem luminária no quadro)",
       "frame_size": [893, 667],
       "streetlights": []
