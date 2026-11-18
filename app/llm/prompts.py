@@ -114,3 +114,37 @@ O que NÃO é buraco:
 Na dúvida entre BURACO e outra opção, quando houver qualquer sinal de asfalto quebrado,
 responda BURACO com confiança entre 0,6 e 0,7. Um item por número, de 1 a {count}.
 Se não der para ver, use OUTRO com confiança baixa."""
+
+
+# ---------- POST /verificar-foto: a foto do cidadão serve como prova? ----------
+
+PHOTO_CHECK_SYSTEM = (
+    "Você confere fotos enviadas por cidadãos de São Paulo sobre consertos da zeladoria urbana. "
+    "Responda somente com um objeto JSON, sem texto fora dele. Rostos e placas já foram borrados de "
+    "propósito, por privacidade; ignore isso e nunca tente identificar pessoas. Não invente: diga só o que "
+    "aparece na imagem. Na dúvida razoável, responda true: toda foto aceita ainda é revisada por uma pessoa "
+    "da equipe. Responda false só quando a foto claramente não serve."
+)
+
+# (problema, local) de cada categoria: entram no pedido e no motivo da recusa.
+PHOTO_CHECK_TEXTS: dict[str, tuple[str, str]] = {
+    "BURACO": ("buraco no asfalto", "pista ou calçada pavimentada"),
+    "FAIXA_APAGADA": ("faixa de pedestre apagada ou gasta", "faixa de pedestre ou pista com sinalização"),
+    "POSTE_APAGADO": ("poste de iluminação apagado, quebrado ou caído", "poste ou luminária de iluminação pública"),
+    "VIA_ALAGADA": ("rua com água acumulada sobre a pista", "rua ou avenida"),
+}
+
+
+def photo_check_prompt(category: str, decision: str) -> str:
+    problem, place = PHOTO_CHECK_TEXTS[category]
+    claim = "o problema foi consertado" if decision == "CONFIRM" else "o problema continua lá"
+    return f"""Um cidadão enviou esta foto sobre uma ocorrência de {problem} que a prefeitura marcou como resolvida. Ele diz que {claim}.
+
+Responda neste formato JSON:
+{{ "via_publica": true ou false, "local_do_tipo": true ou false, "mostra_o_problema": true ou false, "confianca": número de 0 a 1, "descricao": "uma frase curta, em português, dizendo o que a foto mostra" }}
+
+Regras:
+- via_publica: rua, avenida, calçada, praça, poste ou outro equipamento urbano ao ar livre. Selfie, animal, comida, interior de casa, print de tela, desenho, meme ou foto de outra tela = false.
+- local_do_tipo: aparece {place}, com ou sem o problema.
+- mostra_o_problema: dá para ver {problem}.
+- descricao: diga o que se vê, por exemplo 'um pássaro em um galho', 'asfalto liso sem buracos' ou 'rua com água até a calçada'."""
