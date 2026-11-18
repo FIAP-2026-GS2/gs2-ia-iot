@@ -7,7 +7,7 @@
 Conjunto de teste (fora do Git, em data/eval/pothole/):
 - images/ + labels/: 100 fotos com buracos marcados (formato YOLO), do dataset público
   "Potholes Detection" (Roboflow, CC BY 4.0), espelhado em huggingface.co/datasets/Ryukijano/Pothole-detection-Yolov8
-- negativos: fotos de rua SEM buraco (os prints de dia da CET e a rua-dia), para medir alarme falso
+- negativos: fotos de rua SEM buraco em data/eval/sem-buraco/ (qualquer nome), para medir alarme falso
 
 Métricas:
 - por caixa: uma detecção conta como acerto (TP) se cobrir um buraco marcado com IoU ≥ 0,5
@@ -37,10 +37,9 @@ from app.vision.pothole import MIN_CONFIDENCE, REPORT_CONFIDENCE, PotholeDetecto
 
 ROOT = Path(__file__).resolve().parents[1]
 EVAL_DIR = ROOT / "data" / "eval" / "pothole"
-NEGATIVES = [
-    *sorted((ROOT / "data" / "amostras" / "cet").glob("*_dia_*.png")),
-    ROOT / "data" / "amostras" / "poste" / "rua-dia.jpg",
-]
+# Fotos de rua SEM buraco (qualquer nome, .jpg ou .png): medem o alarme falso.
+NEGATIVES_DIR = ROOT / "data" / "eval" / "sem-buraco"
+NEGATIVES = sorted(p for p in NEGATIVES_DIR.glob("*") if p.suffix.lower() in {".jpg", ".jpeg", ".png"})
 MODELOS = {
     "A · RDD (Japão/Índia, 5 classes)": ROOT / "models" / "pothole" / "rdd-yolov8s.onnx",
     "B · Smartathon (Arábia Saudita)": ROOT / "models" / "pothole" / "smartathon-yolov8s.onnx",
