@@ -58,7 +58,7 @@ def upload(storage: BlobStorage, cameras: list[str]) -> int:
                 print(f"  - {code} {period}: borrão falhou, NÃO enviada ({error})")
                 continue
             storage.upload(blob_name(code, period), encode_jpeg(blurred.image), "image/jpeg")
-            print(f"  - {code} {period}: borrada ({len(blurred.faces)} rosto(s), {len(blurred.plates)} placa(s), {len(blurred.persons)} pessoa(s)) e enviada → "
+            print(f"  - {code} {period}: borrada ({len(blurred.faces)} rosto(s), {len(blurred.plates)} placa(s), {len(blurred.persons)} pessoa(s); {len(blurred.unconfirmed_faces)} \"rosto(s)\" sem confirmação) e enviada → "
                   f"{blob_name(code, period)}", flush=True)
             sent += 1
     return sent

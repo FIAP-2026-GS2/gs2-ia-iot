@@ -41,6 +41,8 @@ class AnonymizationSummary(BaseModel):
     faces_blurred: int = Field(description="Rostos borrados (pessoas próximas e médias)")
     heads_blurred: int = Field(description="Cabeças borradas (pessoas de longe, a partir de 60 px de altura)")
     plates_blurred: int = Field(description="Placas borradas")
+    faces_unconfirmed: int = Field(
+        default=0, description="\"Rostos\" de nota média sem pessoa embaixo (ex.: desenho no chão): não borrados")
     blurred_area_percent: float = Field(description="Quanto da imagem foi coberto por borrão, em %")
 
 
@@ -210,6 +212,7 @@ def analyze(
                 "X-Faces-Blurred": str(len(anonymized.faces)),
                 "X-Heads-Blurred": str(len(anonymized.persons)),
                 "X-Plates-Blurred": str(len(anonymized.plates)),
+                "X-Faces-Unconfirmed": str(len(anonymized.unconfirmed_faces)),
                 "X-Blurred-Area-Percent": f"{anonymized.blurred_area_ratio * 100:.1f}",
                 "X-Processing-Time-Ms": str(elapsed_ms),
                 "X-Detections": ",".join(f.category for f in result.findings) or "nenhuma",
@@ -224,6 +227,7 @@ def analyze(
             faces_blurred=len(anonymized.faces),
             heads_blurred=len(anonymized.persons),
             plates_blurred=len(anonymized.plates),
+            faces_unconfirmed=len(anonymized.unconfirmed_faces),
             blurred_area_percent=round(anonymized.blurred_area_ratio * 100, 1),
         ),
         detections=[
