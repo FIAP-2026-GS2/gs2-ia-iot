@@ -15,6 +15,7 @@ import logging
 from app import __version__
 from app.api.analyze import router as analyze_router
 from app.api.anonymize import router as anonymize_router
+from app.api.photo_check import router as photo_check_router
 from app.api.scheduler import router as scheduler_router
 from app.api.streetlight import router as streetlight_router
 from app.api.dependencies import get_anonymizer
@@ -72,6 +73,7 @@ app = FastAPI(
 )
 app.include_router(analyze_router)
 app.include_router(anonymize_router)
+app.include_router(photo_check_router)
 app.include_router(streetlight_router)
 app.include_router(scheduler_router)
 
