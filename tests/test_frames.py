@@ -79,3 +79,15 @@ def test_decode_ida_e_volta():
 def test_decode_recusa_o_que_nao_e_imagem(data):
     with pytest.raises(InvalidImageError):
         decode_image(data)
+
+
+def test_limit_size_reduz_so_o_que_passa_do_limite():
+    from app.vision.frames import limit_size
+
+    big = np.zeros((3000, 4000, 3), dtype=np.uint8)
+    tall = np.zeros((4000, 1000, 3), dtype=np.uint8)
+    small = np.zeros((480, 640, 3), dtype=np.uint8)
+
+    assert limit_size(big).shape == (1440, 1920, 3)
+    assert limit_size(tall).shape == (1920, 480, 3)      # foto em pé: o lado maior é a altura
+    assert limit_size(small) is small                    # menor que o limite: a mesma imagem, sem cópia

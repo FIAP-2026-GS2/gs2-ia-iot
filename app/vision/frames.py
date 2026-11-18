@@ -22,6 +22,23 @@ class InvalidImageError(Exception):
 # Isso mantém o corpo do POST /api/captures igual num reenvio (a Idempotency-Key não dá 422).
 JPEG_QUALITY = 90
 
+# Foto de celular chega com 4000 × 3000 px ou mais. O detector de rostos amplia 2× antes de procurar,
+# e a 4000 × 3000 o borrão levou 23 s; a 1920 × 1440, 3 s, achando os mesmos rostos e pessoas.
+# 1920 px é a largura de uma tela Full HD: suficiente para a prefeitura e para o app.
+MAX_IMAGE_SIDE = 1920
+
+
+def limit_size(image: np.ndarray, max_side: int = MAX_IMAGE_SIDE) -> np.ndarray:
+    """Reduz a imagem para o lado maior caber em max_side, mantendo a proporção. Menor que isso: não mexe."""
+    height, width = image.shape[:2]
+    largest = max(height, width)
+    if largest <= max_side:
+        return image
+    scale = max_side / largest
+    # INTER_AREA tira a média dos pixels: é o jeito certo de REDUZIR sem serrilhar.
+    return cv2.resize(image, (max(1, round(width * scale)), max(1, round(height * scale))),
+                      interpolation=cv2.INTER_AREA)
+
 
 def extract_frame(video_path: str | Path, at_seconds: float) -> np.ndarray:
     """Devolve o frame do vídeo no instante pedido (em segundos desde o início)."""

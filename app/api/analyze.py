@@ -30,7 +30,7 @@ from app.vision.pothole import PotholeDetector
 from app.vision.streetlight_roi import Camera, LocalReferenceStore
 from app.vision.anonymizer import AnonymizationError, Anonymizer
 from app.vision.annotate import Annotation, annotate
-from app.vision.frames import InvalidImageError, decode_image, encode_jpeg
+from app.vision.frames import InvalidImageError, decode_image, encode_jpeg, limit_size
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
 
@@ -163,7 +163,7 @@ def analyze(
         )
     data = read_upload(file)
     try:
-        image = decode_image(data)
+        image = limit_size(decode_image(data))
     except InvalidImageError as error:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
 
