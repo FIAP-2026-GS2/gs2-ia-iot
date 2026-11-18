@@ -104,13 +104,14 @@
     <div class="tipo">Python 3.13 · FastAPI · ONNX Runtime</div>
     <h3>Serviço de IA</h3>
     <p>Borra rostos, cabeças e placas antes de tudo;<br>detecta buraco, poste apagado e via alagada;<br>
-       o LLM confere o buraco, julga o alagamento<br>e escreve a descrição para a prefeitura e o cidadão.</p>
+       o LLM confere o buraco e a foto do cidadão, julga<br>o alagamento e escreve as descrições.</p>
     <div class="chips">
       <span class="chip">POST /analisar</span><span class="chip">POST /anonymize</span>
+      <span class="chip">POST /verificar-foto</span>
       <span class="chip">POST /verificar-poste</span><span class="chip">GET /agendador</span>
       <span class="chip">GET /health</span>
     </div>
-    <p style="margin-top:10px">Rotas protegidas por <code>X-API-Key</code> · agendador APScheduler<br>185 testes automatizados (pytest)</p>
+    <p style="margin-top:10px">Rotas protegidas por <code>X-API-Key</code> · agendador APScheduler<br>200 testes automatizados (pytest)</p>
   </div>
 </div>
 
@@ -201,7 +202,7 @@
   <text class="seta-txt" x="352" y="355">JWT IA_SERVICE</text>
   <text class="seta-sub" x="352" y="372">GET /schedules/due</text>
   <text class="seta-sub" x="352" y="388">POST captures, analyses</text>
-  <text class="seta-sub" x="362" y="490">POST /anonymize (foto do cidadão)</text>
+  <text class="seta-sub" x="362" y="490">POST /anonymize · /verificar-foto (foto do cidadão)</text>
   <text class="seta-sub" x="362" y="610">POST /verificar-poste (X-API-Key)</text>
   <text class="seta-txt" x="1005" y="225">JPEG borrado</text>
   <text class="seta-sub" x="1005" y="250">HTTPS</text>

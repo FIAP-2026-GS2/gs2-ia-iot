@@ -28,11 +28,12 @@ e a infraestrutura em `gs2-devops`.
 | **Buraco** | YOLOv8 pré-treinado (ONNX) + zonas ignoradas por câmera + **2ª opinião de um LLM de visão** | Frame das 12:00 | Sem dataset de São Paulo e com 4 dias de prazo, um modelo público avaliado num teste separado é mais confiável que um treino do zero. O LLM corta os falsos positivos (sombra, tampa de bueiro). |
 | **Poste apagado** | Visão clássica: brilho e saturação na região de cada luminária, meia-noite comparada com o meio-dia | 12:00 (referência) e 00:00 | Uma regra simples e explicável resolve; comparar com o meio-dia da mesma câmera tira o efeito da posição e do tipo da lâmpada. |
 | **Via alagada** | **LLM de visão** em zero-shot | Durante alerta de chuva | Não há dataset rotulado; o LLM entende contexto (água no meio-fio, roda submersa) e diferencia pista molhada de alagada. |
+| **Foto do cidadão** | Borrão + **LLM de visão** responde 3 perguntas de sim ou não; a regra que aceita ou recusa fica no código | Quando o cidadão confirma ou contesta um conserto pelo app | Barra o que claramente não serve (selfie, pássaro, print de tela) antes de chegar à equipe, com um motivo que o cidadão entende. |
 | **Descrições** | **LLM** gera o texto técnico (prefeitura) e o simples (cidadão), em JSON validado | Toda detecção | Linguagem natural é onde a IA generativa agrega mais. Sem LLM, o serviço usa textos-modelo (plano B). |
 | **Privacidade** | YuNet (rostos), RF-DETR (cabeça de quem está longe), YOLOv9 (placas) | Antes de tudo | Modelos leves em ONNX, sem GPU. |
 
-A **IA generativa** aparece em 4 usos: a 2ª opinião do buraco, o julgamento do alagamento, a verificação do
-poste a partir de uma foto noturna (rota pedida pelo app) e as descrições.
+A **IA generativa** aparece em 5 usos: a 2ª opinião do buraco, o julgamento do alagamento, a verificação do
+poste a partir de uma foto noturna (rota pedida pelo app), a conferência da foto do cidadão e as descrições.
 
 ## Arquitetura
 
@@ -58,7 +59,7 @@ Python, do FastAPI e do .NET.
 
 | Pasta | Responsabilidade |
 |---|---|
-| `app/api/` | Rotas FastAPI (`/analisar`, `/anonymize`, `/verificar-poste`, `/agendador`), dependências e validação da entrada. |
+| `app/api/` | Rotas FastAPI (`/analisar`, `/anonymize`, `/verificar-foto`, `/verificar-poste`, `/agendador`), dependências e validação da entrada. |
 | `app/vision/` | Visão computacional: leitura de imagem e vídeo, anonimização, detector de buraco, zonas e mosaico do verificador, regra do poste, desenho das caixas. |
 | `app/llm/` | Cliente do LLM no padrão OpenAI (principal + reserva) e os prompts. |
 | `app/analysis.py` | Orquestra os cenários de um frame e junta as detecções, com plano B sem LLM. |
@@ -66,7 +67,7 @@ Python, do FastAPI e do .NET.
 | `app/pipeline.py` | O caminho completo de um frame: borra, analisa, sobe ao Blob, cria captura e análise. |
 | `app/scheduler.py` | O agendador: fonte de cada câmera e a rodada (um item com erro não para os outros). |
 | `scripts/` | Avaliação, demonstração, download e conversão dos modelos, deploy no Azure. |
-| `tests/` | 185 testes com pytest (sem internet, sem .NET e sem Blob: tudo com dublês). |
+| `tests/` | 200 testes com pytest (sem internet, sem .NET e sem Blob: tudo com dublês). |
 
 **Stack:** Python 3.13, FastAPI, Pydantic, ONNX Runtime (sem PyTorch em produção), OpenCV, APScheduler,
 httpx, azure-storage-blob, pytest. Docker e Azure Container Instances.
@@ -80,11 +81,49 @@ Todas, menos `/health`, exigem o header `X-API-Key`. Documentação interativa e
 | `GET` | `/health` | .NET e Azure | Diz se o processo está de pé e quais integrações estão configuradas (sem segredos). |
 | `POST` | `/analisar` | demonstração e testes | Recebe uma foto, borra e roda os cenários pedidos (`analises`, `periodo`, `camera`). Responde JSON com as detecções ou a imagem marcada (`formato=imagem`). |
 | `POST` | `/anonymize` | API .NET | Borra a foto que o cidadão manda pelo app para confirmar ou contestar um conserto. Devolve o JPEG borrado e, nos headers, quantos rostos, placas e pessoas foram borrados. |
+| `POST` | `/verificar-foto` | API .NET | Borra a foto do cidadão e pergunta ao LLM se ela serve como prova do conserto (ou da falta dele). Devolve o veredito, o motivo para o cidadão e a foto borrada em base64. |
 | `POST` | `/verificar-poste` | API Java (app) | Diz se a luminária da foto noturna está acesa, apagada ou indeterminada (LLM; regra de brilho como plano B). |
 | `GET` | `/agendador` | operação | Se o agendador está ligado e o resultado da última rodada. |
 
 **Erros:** 401 (sem chave), 413 (arquivo > 10 MB), 415 (não é imagem), 400/422 (imagem inválida ou parâmetro
 errado), 503 (anonimizador indisponível: por privacidade, nenhuma imagem é processada sem borrão).
+
+### Foto do cidadão: `/anonymize` e `/verificar-foto`
+
+Depois que a prefeitura marca uma ocorrência como resolvida, o cidadão pode mandar pelo app uma foto
+**confirmando** o conserto ou **contestando** ("o buraco continua lá"). A foto vai presa à ocorrência, então a
+localização do problema já é conhecida; o app manda junto a latitude e a longitude do celular.
+
+- **`POST /anonymize`** (`file`): devolve o JPEG borrado e, nos headers `X-Faces-Blurred`, `X-Plates-Blurred`,
+  `X-Persons-Blurred` e `X-Faces-Unconfirmed`, quantas áreas foram borradas. Foto acima de 1920 px volta
+  reduzida. O JPEG novo não leva os metadados EXIF da foto original (como o GPS embutido).
+- **`POST /verificar-foto`** (`file`, `categoria` = `BURACO` | `FAIXA_APAGADA` | `POSTE_APAGADO` |
+  `VIA_ALAGADA`, `decisao` = `CONFIRM` | `CONTEST`): borra, manda **só a foto borrada** ao LLM e aplica a regra.
+
+O LLM só responde três perguntas de sim ou não. **Quem decide é a regra, no código**, igual para todo mundo e
+coberta por testes:
+
+| Decisão do cidadão | A foto é aceita quando… |
+|---|---|
+| `CONTEST` (continua com problema) | é uma via pública **e** mostra o problema |
+| `CONFIRM` (foi consertado) | é uma via pública **e** mostra o lugar do tipo certo (ex.: pista ou calçada, para buraco) |
+
+```json
+{
+  "valida": false,
+  "motivo": "A foto não mostra buraco no asfalto: Rua com calçada de paralelepípedos e asfalto liso, sem buracos visíveis.",
+  "descricao": "Rua com calçada de paralelepípedos e asfalto liso, sem buracos visíveis",
+  "confianca": 0.95,
+  "via_publica": true, "local_do_tipo": true, "mostra_o_problema": false,
+  "rostos_borrados": 0, "placas_borradas": 0, "pessoas_borradas": 12,
+  "llm": { "provedor": "principal", "modelo": "qwen/qwen3.8-27b", "latencia_ms": 2597 },
+  "foto_borrada_base64": "/9j/4AAQSkZJRgABAQAAAQAB..."
+}
+```
+
+O prompt pede ao LLM que, **na dúvida razoável, responda sim**: toda foto aceita ainda é revisada por uma pessoa
+da equipe na .NET; a IA só barra o que claramente não serve. Sem borrão ou sem LLM, a rota responde 503 e
+nada é conferido.
 
 ### Exemplo: o que a IA manda à .NET para um buraco
 
@@ -157,6 +196,15 @@ abre ocorrência.
 - **Alagamento:** numa câmera com pista molhada e reflexos, o LLM respondeu "molhada, não alagada", o resultado
   certo. A avaliação é qualitativa: não há dataset de alagamento rotulado.
 
+### Foto do cidadão (`/verificar-foto`, LLM real)
+
+| Foto enviada | Decisão | Resultado |
+|---|---|---|
+| Buraco real (celular) | `CONTEST` | ✅ válida: "buraco no asfalto com exposição do material de base e rachaduras ao redor" |
+| Rua sem buraco | `CONFIRM` | ✅ válida: "asfalto liso, sem buracos visíveis" |
+| Rua sem buraco | `CONTEST` | ❌ "A foto não mostra buraco no asfalto: calçada pavimentada e rua asfaltada sem buracos visíveis." |
+| Retrato de pessoa | `CONFIRM` | ❌ "A foto não mostra uma via pública: …" (os 2 rostos foram borrados antes do LLM) |
+
 ### Privacidade
 
 - Rostos reais nas fotos de teste tiveram nota 0,88 a 0,93; os "rostos" falsos das câmeras (desenho na faixa,
@@ -197,9 +245,9 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-**185 testes**, sem rede: rotas (chave, formatos, erros), anonimização (borrão, falha segura, confirmação dupla
+**200 testes**, sem rede: rotas (chave, formatos, erros), anonimização (borrão, falha segura, confirmação dupla
 do rosto), buraco (letterbox, NMS, zonas, verificador), poste, cliente do LLM (reserva, JSON inválido), cliente
-da .NET (login, 401, 429 com `Retry-After`, 5xx), Blob, pipeline, agendador e configuração.
+da .NET (login, 401, 429 com `Retry-After`, 5xx), Blob, pipeline, agendador, a regra do `/verificar-foto` e configuração.
 
 ## Como rodar
 
@@ -259,7 +307,8 @@ environment variables*) e espera o `/health` responder.
   envia o frame. O JPEG gerado também não leva os metadados EXIF da foto original (como o GPS do celular).
 - **Blob privado:** a URL que a .NET guarda não abre sem credencial.
 - **A IA sugere, a prefeitura decide:** abaixo de 0,5 a detecção só é registrada; buraco sem 2ª opinião do LLM
-  fica em 0,49 e não abre ocorrência; o relato do cidadão passa por revisão da equipe na .NET.
+  fica em 0,49 e não abre ocorrência; a foto do cidadão que a IA aceita ainda passa por revisão da equipe na
+  .NET, e a recusada volta com um motivo em linguagem simples.
 - **Limite de uso dos provedores:** o LLM só é chamado quando há detecção ou alerta, com reserva e tempo limite.
 
 ## Limitações e melhorias futuras
@@ -298,7 +347,7 @@ environment variables*) e espera o `/health` responder.
 - Cada etapa foi testada manualmente (Swagger e terminal) antes do commit, inclusive o ensaio de ponta a ponta
   com a .NET na nuvem e o clone limpo.
 - Todo o código foi revisado e commitado pelo autor, em branches por funcionalidade.
-- 185 testes automatizados.
+- 200 testes automatizados.
 
 ## Integrantes
 
