@@ -80,8 +80,8 @@ Todas, menos `/health`, exigem o header `X-API-Key`. Documentação interativa e
 |---|---|---|---|
 | `GET` | `/health` | .NET e Azure | Diz se o processo está de pé e quais integrações estão configuradas (sem segredos). |
 | `POST` | `/analisar` | demonstração e testes | Recebe uma foto, borra e roda os cenários pedidos (`analises`, `periodo`, `camera`). Responde JSON com as detecções ou a imagem marcada (`formato=imagem`). |
-| `POST` | `/anonymize` | API .NET | Borra a foto que o cidadão manda pelo app para confirmar ou contestar um conserto. Devolve o JPEG borrado e, nos headers, quantos rostos, placas e pessoas foram borrados. |
-| `POST` | `/verificar-foto` | API .NET | Borra a foto do cidadão e pergunta ao LLM se ela serve como prova do conserto (ou da falta dele). Devolve o veredito, o motivo para o cidadão e a foto borrada em base64. |
+| `POST` | `/anonymize` | auxiliar | Só borra: devolve o JPEG borrado e, nos headers, quantos rostos, placas e pessoas foram borrados. A .NET usava esta rota antes do `/verificar-foto`, que já borra; ela continua disponível. |
+| `POST` | `/verificar-foto` | API .NET (v1.3.0) | Borra a foto do cidadão e pergunta ao LLM se ela serve como prova do conserto (ou da falta dele). Devolve o veredito, o motivo para o cidadão e a foto borrada em base64. |
 | `POST` | `/verificar-poste` | API Java (app) | Diz se a luminária da foto noturna está acesa, apagada ou indeterminada (LLM; regra de brilho como plano B). |
 | `GET` | `/agendador` | operação | Se o agendador está ligado e o resultado da última rodada. |
 
@@ -93,6 +93,9 @@ errado), 503 (anonimizador indisponível: por privacidade, nenhuma imagem é pro
 Depois que a prefeitura marca uma ocorrência como resolvida, o cidadão pode mandar pelo app uma foto
 **confirmando** o conserto ou **contestando** ("o buraco continua lá"). A foto vai presa à ocorrência, então a
 localização do problema já é conhecida; o app manda junto a latitude e a longitude do celular.
+
+A .NET chama o **`/verificar-foto`**: ele borra e confere numa chamada só. O `/anonymize` ficou como rota
+auxiliar, para quem só precisa do borrão.
 
 - **`POST /anonymize`** (`file`): devolve o JPEG borrado e, nos headers `X-Faces-Blurred`, `X-Plates-Blurred`,
   `X-Persons-Blurred` e `X-Faces-Unconfirmed`, quantas áreas foram borradas. Foto acima de 1920 px volta
@@ -120,6 +123,11 @@ coberta por testes:
   "foto_borrada_base64": "/9j/4AAQSkZJRgABAQAAAQAB..."
 }
 ```
+
+**O que a .NET faz com a resposta:** lê só `valida`, `motivo` e `foto_borrada_base64`. Com `valida: false`,
+responde 422 ao app com o motivo e não grava nada; com qualquer erro da IA, responde 503 e também não grava. Com
+`valida: true`, guarda no Blob **a foto que a IA devolveu** (a original nunca é salva) e o relato entra na fila
+de revisão da equipe. A .NET espera até 60 s pela IA.
 
 O prompt pede ao LLM que, **na dúvida razoável, responda sim**: toda foto aceita ainda é revisada por uma pessoa
 da equipe na .NET; a IA só barra o que claramente não serve. Sem borrão ou sem LLM, a rota responde 503 e
@@ -204,6 +212,11 @@ abre ocorrência.
 | Rua sem buraco | `CONFIRM` | ✅ válida: "asfalto liso, sem buracos visíveis" |
 | Rua sem buraco | `CONTEST` | ❌ "A foto não mostra buraco no asfalto: calçada pavimentada e rua asfaltada sem buracos visíveis." |
 | Retrato de pessoa | `CONFIRM` | ❌ "A foto não mostra uma via pública: …" (os 2 rostos foram borrados antes do LLM) |
+
+No ensaio de ponta a ponta **pela .NET** (token real de um cidadão de teste emitido pela API Java), as fotos
+aceitas viraram relato na fila da equipe (201), e as recusadas voltaram ao app com o motivo, sem gravar nada:
+um print de tela ("A foto não mostra uma via pública: diagrama de arquitetura de software com caixas e
+setas."), uma pintura de um rosto, uma multidão de perto e a rua sem buraco usada para contestar.
 
 ### Privacidade
 
@@ -292,6 +305,10 @@ python -m scripts.subir_fontes_demo                              # sobe as fotos
 ```
 
 O `--at` simula outro horário: a .NET responde como se fossem 12:00, sem esperar o meio-dia.
+
+**Antes de apresentar:** faça uma chamada de aquecimento (por exemplo, um `/verificar-foto` no Swagger). A
+primeira análise depois de subir a IA leva mais tempo, e, quando o LLM principal bate no limite de uso (429), o
+reserva assume e a resposta pode chegar a ~40 s.
 
 ### Deploy no Azure
 
