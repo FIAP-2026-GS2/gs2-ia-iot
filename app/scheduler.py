@@ -154,6 +154,8 @@ class ItemReport:
     image_id: int | None = None
     detections: int = 0
     message: str = ""
+    # O que a .NET fez com cada detecção: OPENED_NEW_ISSUE, LINKED_TO_EXISTING_ISSUE ou BELOW_CONFIDENCE_THRESHOLD
+    results: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -197,6 +199,9 @@ def run_once(
                 outcome = process(item, frame)
                 line.status, line.image_id, line.message = outcome.status, outcome.image_id, outcome.message
                 line.detections = len(outcome.detections or [])
+                line.results = [f"tipo {d.get('issueTypeId')} · confiança {d.get('confidenceScore')} · "
+                                f"{d.get('outcome')} · ocorrência {d.get('issueReportId')}"
+                                for d in outcome.detections or []]
             except Exception as error:  # noqa: BLE001 — Blob/.NET falhou neste item; os outros seguem
                 logger.exception("Agendador: falha em %s %s", item.camera_code, item.slot_at.isoformat())
                 line.message = f"{type(error).__name__}: {error}"

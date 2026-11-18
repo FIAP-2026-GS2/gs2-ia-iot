@@ -52,6 +52,12 @@
       "name": "Av. Ibirapuera (CET, teste; sem luminária no quadro)",
       "frame_size": [893, 667],
       "streetlights": []
+    },
+    "DEMO-BURACO": {
+      "source": {"dia": "blob:demo/DEMO-BURACO/dia.jpg"},
+      "name": "Demonstração: buraco perto da faixa (foto do dataset Potholes Detection, Roboflow, CC BY 4.0)",
+      "frame_size": [640, 640],
+      "streetlights": []
     }
   }
 }

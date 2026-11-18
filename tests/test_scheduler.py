@@ -85,7 +85,7 @@ def test_rodada_processa_cada_item_e_um_erro_nao_para_os_outros(tmp_path):
         seen.append(item.camera_code)
         if item.camera_code == "A":
             raise RuntimeError("Blob fora do ar")
-        return Outcome(detections=[{"id": 1}])
+        return Outcome(detections=[{"issueTypeId": 1, "confidenceScore": 0.78, "outcome": "OPENED_NEW_ISSUE", "issueReportId": 5}])
 
     report = run_once(lambda at: [_item("A"), _item("B"), _item("SEM-FONTE")], sources, process)
 
@@ -93,6 +93,7 @@ def test_rodada_processa_cada_item_e_um_erro_nao_para_os_outros(tmp_path):
     assert [(i.camera_code, i.status) for i in report.items] == [("A", "ERROR"), ("B", "SENT"), ("SEM-FONTE", "NO_SOURCE")]
     assert "Blob fora do ar" in report.items[0].message
     assert report.items[1].image_id == 7 and report.items[1].detections == 1
+    assert report.items[1].results == ["tipo 1 · confiança 0.78 · OPENED_NEW_ISSUE · ocorrência 5"]
     assert report.due == 3 and not report.error
 
 

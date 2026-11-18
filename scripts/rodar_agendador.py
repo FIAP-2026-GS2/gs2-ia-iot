@@ -21,6 +21,8 @@ from app.scheduler import ItemReport, build_runner, run_once
 def show(line: ItemReport) -> None:
     extra = f" · imagem {line.image_id} · {line.detections} detecção(ões)" if line.image_id else ""
     print(f"  - {line.camera_code} · {line.slot_at} · {line.reason} → {line.status}{extra}", flush=True)
+    for result in line.results:
+        print(f"      {result}", flush=True)
     if line.message:
         print(f"      {line.message[:300]}", flush=True)
 
