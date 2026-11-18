@@ -26,7 +26,7 @@ from app.integrations.blob import BlobStorage, slot_text
 from app.integrations.dotnet import DotnetApiError, DotnetClient, DueItem
 from app.llm.client import LlmClient
 from app.vision.anonymizer import AnonymizationError, Anonymizer
-from app.vision.frames import encode_jpeg
+from app.vision.frames import encode_jpeg, limit_size
 from app.vision.pothole import PotholeDetector
 from app.vision.streetlight_roi import Camera
 
@@ -147,6 +147,7 @@ def process_frame(
     llm: LlmClient | None,
 ) -> FrameOutcome:
     started = time.perf_counter()
+    frame = limit_size(frame)  # mesma regra das rotas: lado maior até 1920 px
     try:
         anonymized = anonymizer.anonymize(frame)
     except AnonymizationError as error:
