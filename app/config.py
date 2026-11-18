@@ -76,6 +76,11 @@ class Settings(BaseSettings):
     # Referência do meio-dia do poste (fica até a captura da meia-noite).
     reference_dir: str = "data/cache/refs"
 
+    # Agendador (app/scheduler.py): desligado por padrão, para o servidor local e os testes não
+    # chamarem a .NET sozinhos. Na demonstração: SCHEDULER_ENABLED=true.
+    scheduler_enabled: bool = False
+    scheduler_interval_minutes: int = Field(default=5, ge=1, le=60)
+
     @field_validator(*_SECRET_FIELDS)
     @classmethod
     def _reject_example_values(cls, value: SecretStr | None, info) -> SecretStr | None:

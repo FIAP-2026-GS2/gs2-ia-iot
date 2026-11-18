@@ -19,7 +19,7 @@ def isolated_settings(monkeypatch):
     for name in (
         "DOTNET_API_URL", "IA_USERNAME", "IA_PASSWORD", "BLOB_CONNECTION_STRING", "BLOB_PREFIX",
         "LLM_BASE_URL", "LLM_MODEL", "LLM_API_KEY",
-        "LLM_FALLBACK_BASE_URL", "LLM_FALLBACK_MODEL", "LLM_FALLBACK_API_KEY",
+        "LLM_FALLBACK_BASE_URL", "LLM_FALLBACK_MODEL", "LLM_FALLBACK_API_KEY", "SCHEDULER_ENABLED",
     ):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("APP_ENV", "test")
