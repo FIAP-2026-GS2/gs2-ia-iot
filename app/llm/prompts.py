@@ -81,25 +81,36 @@ def scene_prompt(detections: list[dict], ask_flooding: bool) -> str:
 
 POTHOLE_CHECK_SYSTEM = (
     "Você inspeciona o pavimento de ruas de São Paulo. Responda somente com um objeto JSON. "
-    "Seja cético: um detector automático marcou candidatos, e muitos são alarmes falsos."
+    "Um detector automático marcou candidatos: a maioria é buraco de verdade, mas alguns são "
+    "sombra, tampa de bueiro ou mancha. Seu papel é separar os dois, sem descartar dano real."
 )
 
 
 def pothole_check_prompt(count: int) -> str:
-    return f"""A imagem é um mosaico com {count} recorte(s) numerado(s) de câmeras de rua.
+    return f"""A imagem é um mosaico com {count} recorte(s) numerado(s) de câmeras e fotos de rua.
 Em cada recorte, um detector automático marcou com um retângulo vermelho um possível buraco.
 Para cada número, diga o que está DENTRO do retângulo vermelho (use o entorno só como contexto).
 
 Responda neste formato JSON:
 {{
   "candidatos": [
-    {{"id": número, "objeto": "BURACO", "SOMBRA", "BUEIRO_OU_TAMPA", "REMENDO", "MANCHA_OU_POCA", "SINALIZACAO", "VEICULO_OU_PESSOA" ou "OUTRO",
-      "confianca": número de 0 a 1, "motivo": "frase curta"}}
+    {{"id": número, "objeto": "BURACO", "SOMBRA", "BUEIRO_OU_TAMPA", "REMENDO_PLANO", "POCA_RASA", "MANCHA",
+      "SINALIZACAO", "VEICULO_OU_PESSOA" ou "OUTRO", "confianca": número de 0 a 1, "motivo": "frase curta"}}
   ]
 }}
 
-Regras:
-- BURACO: cavidade no asfalto, com bordas quebradas ou irregulares (pode ter água ou terra dentro).
-- Sombra projetada, tampa de bueiro, grelha, remendo plano, mancha, poça rasa, faixa pintada,
-  veículo ou pessoa NÃO são buraco.
-- Um item por número, de 1 a {count}. Se não der para ver, use OUTRO com confiança baixa."""
+O que é BURACO (dano que precisa de reparo):
+- cavidade no asfalto, com bordas quebradas ou irregulares, mesmo rasa;
+- buraco cheio de água ou terra: se a borda da água é irregular e há asfalto quebrado em volta, é BURACO;
+- remendo afundado, esfarelado ou com pedaços soltos; vários buracos juntos; asfalto desagregado.
+
+O que NÃO é buraco:
+- SOMBRA: mancha escura com borda lisa que acompanha um poste, árvore ou veículo;
+- BUEIRO_OU_TAMPA: tampa ou grelha de metal/concreto, redonda ou retangular, com borda regular;
+- REMENDO_PLANO: remendo nivelado e inteiro, só com cor diferente;
+- POCA_RASA: água sobre asfalto inteiro, sem borda quebrada visível;
+- MANCHA: óleo, sujeira ou asfalto molhado; SINALIZACAO: faixa ou marca pintada.
+
+Na dúvida entre BURACO e outra opção, quando houver qualquer sinal de asfalto quebrado,
+responda BURACO com confiança entre 0,6 e 0,7. Um item por número, de 1 a {count}.
+Se não der para ver, use OUTRO com confiança baixa."""

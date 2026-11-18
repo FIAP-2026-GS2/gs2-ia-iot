@@ -106,7 +106,7 @@ class LlmDescription(BaseModel):
 
 class LlmCandidate(BaseModel):
     id: int
-    objeto: Literal["BURACO", "SOMBRA", "BUEIRO_OU_TAMPA", "REMENDO", "MANCHA_OU_POCA",
+    objeto: Literal["BURACO", "SOMBRA", "BUEIRO_OU_TAMPA", "REMENDO_PLANO", "POCA_RASA", "MANCHA",
                     "SINALIZACAO", "VEICULO_OU_PESSOA", "OUTRO"]
     confianca: float = Field(ge=0, le=1)
     motivo: str = Field(min_length=1, max_length=300)

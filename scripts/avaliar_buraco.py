@@ -2,7 +2,7 @@
 
     python -m scripts.avaliar_buraco                       # avalia os modelos da lista MODELOS
     python -m scripts.avaliar_buraco --modelo outro.onnx   # avalia outro arquivo
-    python -m scripts.avaliar_buraco --verificar           # com o verificador LLM (usa o .env; ~20 min, com pausa de 8 s)
+    python -m scripts.avaliar_buraco --verificar           # com o verificador LLM (usa o .env; ~35 min, com pausa de 15 s)
 
 Conjunto de teste (fora do Git, em data/eval/pothole/):
 - images/ + labels/: 100 fotos com buracos marcados (formato YOLO), do dataset público
@@ -46,7 +46,8 @@ MODELOS = {
     "B · Smartathon (Arábia Saudita)": ROOT / "models" / "pothole" / "smartathon-yolov8s.onnx",
 }
 IOU_MATCH = 0.5
-PAUSE_SECONDS = 8  # entre chamadas ao verificador
+PAUSE_SECONDS = 15  # entre chamadas ao verificador
+RETRY_SECONDS = 45  # sem resposta (429/timeout): espera e tenta uma vez de novo
 
 
 def load(path: Path) -> np.ndarray:
@@ -98,7 +99,7 @@ def evaluate(detector: PotholeDetector, positives: list[Path], thresholds: list[
     verdicts: Counter = Counter()
     timings = []
     samples = [(path, True) for path in positives] + [(path, False) for path in NEGATIVES if path.is_file()]
-    for path, has_label in samples:
+    for index, (path, has_label) in enumerate(samples, start=1):
         image = load(path)
         height, width = image.shape[:2]
         truth = ground_truth(EVAL_DIR / "labels" / f"{path.stem}.txt", width, height) if has_label else []
@@ -108,12 +109,23 @@ def evaluate(detector: PotholeDetector, positives: list[Path], thresholds: list[
         if llm is not None and found:
             check = AnalysisResult()
             _verify(image, found, llm, check)
+            if found and all(f.verified is None for f in check.findings) and not check.discarded:
+                verdicts["nova tentativa"] += 1  # o LLM não respondeu: limite do plano grátis, não erro do modelo
+                time.sleep(RETRY_SECONDS)
+                check = AnalysisResult()
+                _verify(image, found, llm, check)
             confirmed = {f.bbox for f in check.findings if f.verified}
             verdicts.update(d.reason.split(":")[0] for d in check.discarded)
             verdicts["sem resposta"] += sum(1 for f in check.findings if f.verified is None)
             verdicts["BURACO (confirmado)"] += len(confirmed)
             found = [b for b in found if (b.x1, b.y1, b.x2, b.y2) in confirmed]
+            print(f"   [{index:3d}/{len(samples)}] {path.name[:40]:40s} {'com buraco' if has_label else 'sem buraco'}"
+                  f" | YOLO {len(check.findings) + len(check.discarded)} caixa(s) → confirmadas {len(confirmed)}"
+                  f" | descartadas {[d.reason.split(':')[0] for d in check.discarded]}", flush=True)
             time.sleep(PAUSE_SECONDS)  # o Groq gratuito limita chamadas por minuto (HTTP 429)
+        elif llm is not None:
+            print(f"   [{index:3d}/{len(samples)}] {path.name[:40]:40s} {'com buraco' if has_label else 'sem buraco'}"
+                  " | YOLO 0 caixa(s), sem chamada ao LLM", flush=True)
         for threshold, count in counts.items():
             predicted = [(b.x1, b.y1, b.x2, b.y2) for b in found if b.confidence >= threshold]  # já em ordem de confiança
             matched = set()
