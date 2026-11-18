@@ -12,7 +12,7 @@ from app.api.analyze import read_upload
 from app.api.dependencies import anonymizer_dependency
 from app.security import require_api_key
 from app.vision.anonymizer import AnonymizationError, Anonymizer
-from app.vision.frames import InvalidImageError, decode_image, encode_jpeg
+from app.vision.frames import InvalidImageError, decode_image, encode_jpeg, limit_size
 
 router = APIRouter(tags=["Anonimização"])
 
@@ -26,7 +26,8 @@ router = APIRouter(tags=["Anonimização"])
         200: {
             "content": {"image/jpeg": {}},
             "description": "Foto borrada. Os headers X-Faces-Blurred, X-Plates-Blurred e "
-                           "X-Persons-Blurred dizem quantas áreas foram borradas.",
+                           "X-Persons-Blurred dizem quantas áreas foram borradas. "
+                           "Foto com lado maior que 1920 px volta reduzida para 1920.",
         },
         400: {"description": "O arquivo não é uma imagem válida"},
         401: {"description": "Chave ausente ou inválida no header X-API-Key"},
@@ -42,7 +43,7 @@ def anonymize(
     data = read_upload(file)
 
     try:
-        image = decode_image(data)
+        image = limit_size(decode_image(data))
     except InvalidImageError as error:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(error)) from error
 
@@ -58,5 +59,7 @@ def anonymize(
             "X-Faces-Blurred": str(len(result.faces)),
             "X-Plates-Blurred": str(len(result.plates)),
             "X-Persons-Blurred": str(len(result.persons)),
+            # "Rostos" de nota média sem pessoa embaixo (ex.: desenho no chão): não borrados.
+            "X-Faces-Unconfirmed": str(len(result.unconfirmed_faces)),
         },
     )

@@ -21,7 +21,7 @@ from app.llm.client import LlmClient, LlmUnavailableError
 from app.llm.prompts import STREETLIGHT_PROMPT, STREETLIGHT_SYSTEM
 from app.security import require_api_key
 from app.vision.anonymizer import AnonymizationError, Anonymizer
-from app.vision.frames import InvalidImageError, decode_image, encode_jpeg
+from app.vision.frames import InvalidImageError, decode_image, encode_jpeg, limit_size
 from app.vision.streetlight import LLM_MIN_CONFIDENCE, StreetlightStatus, read_brightness, shrink
 
 logger = logging.getLogger("uvicorn.error")
@@ -89,7 +89,7 @@ def verify_streetlight(
     started = time.perf_counter()
     data = read_upload(file)
     try:
-        image = decode_image(data)
+        image = limit_size(decode_image(data))
     except InvalidImageError as error:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(error)) from error
 

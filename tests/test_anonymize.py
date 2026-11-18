@@ -80,3 +80,26 @@ def test_sem_anonimizador_responde_503_e_nao_devolve_foto(client):
 
     assert response.status_code == 503
     assert response.headers["content-type"].startswith("application/json")
+
+
+def test_foto_grande_volta_reduzida_para_1920_mantendo_a_proporcao(client, fake_anonymizer):
+    ok, big = cv2.imencode(".jpg", np.full((3000, 4000, 3), 120, dtype=np.uint8))  # celular comum
+
+    response = client.post("/anonymize", files=_upload(big.tobytes()), headers=HEADERS)
+
+    image = cv2.imdecode(np.frombuffer(response.content, np.uint8), cv2.IMREAD_COLOR)
+    assert response.status_code == 200
+    assert image.shape[:2] == (1440, 1920)  # 4000 × 3000 → 1920 × 1440 (mesma proporção 4:3)
+
+
+def test_conta_os_rostos_sem_confirmacao(client):
+    # Rosto de nota média e nenhuma pessoa achada: não borra, mas aparece no header.
+    fake = Anonymizer(FakeDetector([Box(10, 10, 60, 60, 0.7)]), FakeDetector(), FakeDetector([]))
+    app.dependency_overrides[anonymizer_dependency] = lambda: fake
+    try:
+        response = client.post("/anonymize", files=_upload(_foto()), headers=HEADERS)
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.headers["x-faces-blurred"] == "0"
+    assert response.headers["x-faces-unconfirmed"] == "1"
