@@ -18,11 +18,12 @@ from app.api.anonymize import router as anonymize_router
 from app.api.photo_check import router as photo_check_router
 from app.api.scheduler import router as scheduler_router
 from app.api.streetlight import router as streetlight_router
-from app.api.dependencies import get_anonymizer
+from app.api.dependencies import _pothole_detector, get_anonymizer
 from pydantic import ValidationError
 
 from app.config import Settings, describe_settings_error, get_settings
 from app.vision.anonymizer import AnonymizationError
+from app.warmup import warm_up
 
 # Usa o logger do próprio uvicorn: as mensagens saem no mesmo formato ("ERROR:    ...").
 logger = logging.getLogger("uvicorn.error")
@@ -50,6 +51,11 @@ async def lifespan(application: FastAPI):
         get_anonymizer()
     except AnonymizationError as error:
         logger.error("Anonimização indisponível: %s", error)
+    # Aquecimento: a 1ª execução de cada modelo é lenta; ela acontece aqui, e não na 1ª foto.
+    # Nos testes fica desligado (cada teste sobe a API de novo e não precisa disso).
+    if settings.app_env != "test":
+        warm_up(("borrão", lambda image: get_anonymizer().anonymize(image)),
+                ("buraco", lambda image: _pothole_detector(settings.pothole_model_path).detect(image)))
     # Agendador: só com SCHEDULER_ENABLED=true (no local e nos testes fica desligado).
     application.state.scheduler = None
     if settings.scheduler_enabled:
