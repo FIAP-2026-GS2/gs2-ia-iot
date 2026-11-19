@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.subir_fontes_demo import blob_name, load_photos
+from scripts.demo.subir_fontes_demo import blob_name, load_photos
 
 
 def _write(tmp_path, cameras):

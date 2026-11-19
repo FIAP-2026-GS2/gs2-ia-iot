@@ -16,7 +16,7 @@ Fonte do frame: não temos o stream do Smart Sampa. Cada câmera aponta, no conf
   usada com as fotos de teste da CET (dia para as 12:00, noite para as 00:00).
 
 Cada caminho pode ser um arquivo local ou "blob:<nome no container>". As fotos de demonstração
-ficam no Blob (já borradas, por scripts/subir_fontes_demo.py): assim funcionam num clone limpo e
+ficam no Blob (já borradas, por scripts/demo/subir_fontes_demo.py): assim funcionam num clone limpo e
 no container da nuvem, sem as fotos irem para o GitHub. Na 1ª leitura, o arquivo é baixado para
 data/cache/fontes/ e reaproveitado nas próximas.
 """
@@ -59,7 +59,7 @@ class BlobFile:
         if not self.cache.is_file():
             data = self.storage.download(self.name)
             if data is None:
-                raise SourceError(f"não está no Blob: {self.name} (rode python -m scripts.subir_fontes_demo)")
+                raise SourceError(f"não está no Blob: {self.name} (rode python -m scripts.demo.subir_fontes_demo)")
             self.cache.parent.mkdir(parents=True, exist_ok=True)
             partial = self.cache.with_suffix(self.cache.suffix + ".part")
             partial.write_bytes(data)

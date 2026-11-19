@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgl1 libglib2
 WORKDIR /export
 COPY requirements-export.txt .
 RUN pip install -r requirements-export.txt
-COPY scripts/exportar_buraco.py .
+COPY scripts/modelos/exportar_buraco.py .
 # Confere o SHA-256 do .pt e a saída do .onnx; se algo não bater, o build para.
 RUN python exportar_buraco.py /export/smartathon-yolov8s.onnx
 
@@ -43,7 +43,7 @@ COPY config/ config/
 
 # O detector de pessoas (114 MB) não está no Git: baixa aqui, conferindo o SHA-256.
 # Se o hash não bater, o build falha (melhor do que subir sem o borrão completo).
-RUN python -m scripts.baixar_modelos
+RUN python -m scripts.modelos.baixar_modelos
 
 # O modelo de buraco já convertido no estágio 1.
 COPY --from=modelo-buraco /export/smartathon-yolov8s.onnx models/pothole/smartathon-yolov8s.onnx

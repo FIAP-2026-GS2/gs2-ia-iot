@@ -1,4 +1,4 @@
-# Só para o estágio de conversão do Dockerfile (scripts/exportar_buraco.py).
+# Só para o estágio de conversão do Dockerfile (scripts/modelos/exportar_buraco.py).
 # Nada daqui vai para a imagem final: ela roda o .onnx com o ONNX Runtime, sem PyTorch.
 # O torch vem do índice CPU do PyTorch (o padrão do PyPI traz CUDA, ~2 GB a mais).
 --index-url https://download.pytorch.org/whl/cpu

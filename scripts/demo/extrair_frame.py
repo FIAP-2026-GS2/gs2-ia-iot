@@ -1,8 +1,8 @@
 """Extrai frames de um vídeo e, opcionalmente, borra rostos e placas. Útil para teste manual.
 
 Exemplos (na raiz do projeto, com o venv ativado):
-    python -m scripts.extrair_frame data/videos/rua.mp4 --segundo 12
-    python -m scripts.extrair_frame data/videos/rua.mp4 --segundo 12 --quantidade 3 --borrar
+    python -m scripts.demo.extrair_frame data/videos/rua.mp4 --segundo 12
+    python -m scripts.demo.extrair_frame data/videos/rua.mp4 --segundo 12 --quantidade 3 --borrar
 """
 
 import argparse

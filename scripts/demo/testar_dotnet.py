@@ -1,8 +1,8 @@
 """Confere a integração real com a API .NET e o Blob, usando o .env.
 
-    python -m scripts.testar_dotnet                          # login + agenda (só leitura)
-    python -m scripts.testar_dotnet --at 2026-11-18T12:00-03:00   # simula outro horário
-    python -m scripts.testar_dotnet --enviar foto.png        # envia 1 frame do 1º item da agenda
+    python -m scripts.demo.testar_dotnet                          # login + agenda (só leitura)
+    python -m scripts.demo.testar_dotnet --at 2026-11-18T12:00-03:00   # simula outro horário
+    python -m scripts.demo.testar_dotnet --enviar foto.png        # envia 1 frame do 1º item da agenda
 
 Sem --enviar, nada é gravado: só login e GET /api/schedules/due.
 Com --enviar, a foto é borrada, sobe ao Blob e vira captura + análise na .NET (grava no banco).

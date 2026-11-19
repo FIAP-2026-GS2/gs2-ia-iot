@@ -27,7 +27,7 @@ MODELS_DIR = Path(__file__).resolve().parents[2] / "models" / "anonymizer"
 FACE_MODEL = MODELS_DIR / "face_detection_yunet_2023mar.onnx"
 PLATE_MODEL = MODELS_DIR / "yolo-v9-t-640-license-plates-end2end.onnx"
 # Detector de objetos COCO, do qual usamos só a classe "person".
-# 114 MB: passa do limite de 100 MB do GitHub, então é baixado por script (scripts/baixar_modelos.py).
+# 114 MB: passa do limite de 100 MB do GitHub, então é baixado por script (scripts/modelos/baixar_modelos.py).
 PERSON_MODEL = MODELS_DIR / "rf-detr-nano-384-coco.onnx"
 
 # Limiares baixos de propósito (privacidade > precisão). O padrão do YuNet é 0,9 e o das placas, 0,25.
@@ -178,7 +178,7 @@ class RfDetrPersonDetector:
         self._min_height = min_height
         if not model_path.is_file():
             raise AnonymizationError(
-                f"Modelo de pessoas não encontrado: {model_path.name}. Rode: python -m scripts.baixar_modelos"
+                f"Modelo de pessoas não encontrado: {model_path.name}. Rode: python -m scripts.modelos.baixar_modelos"
             )
         from open_image_models.detection.core.coco import COCO_CLASSES
         from open_image_models.detection.core.rf_detr.inference import RFDETRDetector

@@ -89,7 +89,7 @@ class PotholeDetector:
     def __init__(self, model_path: str | Path, name: str | None = None):
         path = Path(model_path)
         if not path.is_file():
-            raise PotholeModelError(f"Modelo de buraco não encontrado: {path} (rode python -m scripts.baixar_modelos)")
+            raise PotholeModelError(f"Modelo de buraco não encontrado: {path} (rode python -m scripts.modelos.baixar_modelos)")
         self.name = name or path.stem
         self._session = ort.InferenceSession(str(path), providers=["CPUExecutionProvider"])
         self._input = self._session.get_inputs()[0].name
