@@ -195,7 +195,7 @@ def _potholes(image: np.ndarray, period: Period | None, detector: PotholeDetecto
         result.notes.append("Buraco: não analisado à meia-noite (o modelo foi treinado com fotos de dia).")
         return
     if detector is None:
-        result.notes.append("Buraco: modelo indisponível (rode python -m scripts.baixar_modelos).")
+        result.notes.append("Buraco: modelo indisponível (rode python -m scripts.modelos.baixar_modelos).")
         return
     result.models.append(f"pothole:{detector.name}")
     height, width = image.shape[:2]

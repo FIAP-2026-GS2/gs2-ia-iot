@@ -1,8 +1,8 @@
 """Compara os modelos de buraco num conjunto de teste que nenhum deles viu no treino.
 
-    python -m scripts.avaliar_buraco                       # avalia os modelos da lista MODELOS
-    python -m scripts.avaliar_buraco --modelo outro.onnx   # avalia outro arquivo
-    python -m scripts.avaliar_buraco --verificar           # com o verificador LLM (usa o .env; ~35 min, com pausa de 15 s)
+    python -m scripts.avaliacao.avaliar_buraco                       # avalia os modelos da lista MODELOS
+    python -m scripts.avaliacao.avaliar_buraco --modelo outro.onnx   # avalia outro arquivo
+    python -m scripts.avaliacao.avaliar_buraco --verificar           # com o verificador LLM (usa o .env; ~35 min, com pausa de 15 s)
 
 Conjunto de teste (fora do Git, em data/eval/pothole/):
 - images/ + labels/: 100 fotos com buracos marcados (formato YOLO), do dataset público
@@ -36,7 +36,7 @@ from app.config import get_settings
 from app.llm.client import LlmClient, providers_from_settings
 from app.vision.pothole import MIN_CONFIDENCE, REPORT_CONFIDENCE, PotholeDetector
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 EVAL_DIR = ROOT / "data" / "eval" / "pothole"
 # Fotos de rua SEM buraco (qualquer nome, .jpg ou .png): medem o alarme falso.
 NEGATIVES_DIR = ROOT / "data" / "eval" / "sem-buraco"

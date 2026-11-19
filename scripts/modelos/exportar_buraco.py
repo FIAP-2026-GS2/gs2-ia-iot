@@ -1,6 +1,6 @@
 """Baixa o modelo de buraco (.pt do PyTorch), confere o SHA-256 e converte para ONNX.
 
-    python scripts/exportar_buraco.py models/pothole/smartathon-yolov8s.onnx
+    python scripts/modelos/exportar_buraco.py models/pothole/smartathon-yolov8s.onnx
 
 Por que converter e não baixar o ONNX pronto: o autor (Samdutse/pothole-yolov8, Hugging Face)
 só publica o .pt. O serviço roda com ONNX Runtime, sem PyTorch (imagem ~1,5 GB menor).

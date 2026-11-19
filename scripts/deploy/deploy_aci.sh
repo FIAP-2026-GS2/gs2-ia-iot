@@ -7,7 +7,7 @@
 #   3. Espera o /health responder
 #
 # Pré-requisitos: Docker Desktop aberto, az login e o .env.cloud preenchido (copie do .env.cloud.example).
-# Uso (na raiz do repositório, no Git Bash): bash scripts/deploy_aci.sh [--remoto]
+# Uso (na raiz do repositório, no Git Bash): bash scripts/deploy/deploy_aci.sh [--remoto]
 #
 # Os segredos vão como "secure environment variables": o portal e o "az container show"
 # não mostram o valor. Este script nunca imprime nenhum deles.
@@ -17,7 +17,7 @@ export MSYS_NO_PATHCONV=1   # no Git Bash, impede que "/subscriptions/..." vire 
 
 # Trabalha sempre na raiz do repositório, com caminhos relativos: o git e o docker são programas
 # do Windows e não entendem "/c/Users/..." (o MSYS_NO_PATHCONV acima desliga a tradução).
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 ENV_FILE=".env.cloud"
 
 info() { printf '\n==> %s\n' "$*"; }

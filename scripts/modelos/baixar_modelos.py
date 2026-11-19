@@ -1,6 +1,6 @@
 """Baixa os modelos grandes demais para o GitHub e confere o SHA-256 de cada um.
 
-    python -m scripts.baixar_modelos
+    python -m scripts.modelos.baixar_modelos
 
 O SHA-256 é como o lacre de um pacote: se o arquivo baixado mudar um único byte
 (download cortado ou arquivo trocado na origem), o hash não bate e o script recusa.
@@ -12,7 +12,7 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 @dataclass(frozen=True)

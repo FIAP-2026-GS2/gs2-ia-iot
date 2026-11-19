@@ -1,5 +1,5 @@
 {
-  "_comentario": "Fotos locais de teste que o scripts/subir_fontes_demo.py borra e sobe ao Blob como fonte de cada câmera (demo/<câmera>/<período>.jpg). Uma entrada por câmera do config/cameras.json, com a foto de 'dia' (12:00) e/ou de 'noite' (00:00). Os arquivos ficam em data/, fora do Git. As câmeras CET-* usam prints de câmeras públicas da CET, só para teste; DEMO-BURACO usa uma foto do dataset Potholes Detection (Roboflow, CC BY 4.0).",
+  "_comentario": "Fotos locais de teste que o scripts/demo/subir_fontes_demo.py borra e sobe ao Blob como fonte de cada câmera (demo/<câmera>/<período>.jpg). Uma entrada por câmera do config/cameras.json, com a foto de 'dia' (12:00) e/ou de 'noite' (00:00). Os arquivos ficam em data/, fora do Git. As câmeras CET-* usam prints de câmeras públicas da CET, só para teste; DEMO-BURACO usa uma foto do dataset Potholes Detection (Roboflow, CC BY 4.0).",
   "cameras": {
     "CET-BRASIL": {
       "dia": "data/amostras/cet/cet_brasil_dia_1.png",

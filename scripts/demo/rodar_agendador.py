@@ -1,8 +1,8 @@
 """Roda o agendador no terminal, mostrando cada frame (o mesmo código que a API roda sozinha).
 
-    python -m scripts.rodar_agendador --at 2026-11-18T12:00-03:00   # uma rodada, simulando 12:00
-    python -m scripts.rodar_agendador --at 2026-11-19T00:00-03:00   # uma rodada, simulando 00:00
-    python -m scripts.rodar_agendador --loop                        # de 5 em 5 min, até Ctrl+C
+    python -m scripts.demo.rodar_agendador --at 2026-11-18T12:00-03:00   # uma rodada, simulando 12:00
+    python -m scripts.demo.rodar_agendador --at 2026-11-19T00:00-03:00   # uma rodada, simulando 00:00
+    python -m scripts.demo.rodar_agendador --loop                        # de 5 em 5 min, até Ctrl+C
 
 Grava de verdade: frame borrado no Blob, captura e análise na .NET (pode abrir ocorrência).
 Rodar de novo o mesmo horário não duplica nada: a .NET já não devolve o que foi capturado.

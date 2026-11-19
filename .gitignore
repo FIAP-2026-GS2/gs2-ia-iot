@@ -13,7 +13,7 @@ venv/
 .coverage
 htmlcov/
 
-# Modelos de buraco: públicos e pesados, baixados por script (scripts/baixar_modelos.py).
+# Modelos de buraco: públicos e pesados, baixados por script (scripts/modelos/baixar_modelos.py).
 # O modelo da faixa (models/crosswalk/) é nosso e pequeno: esse vai no repositório.
 models/pothole/
 # Detector de pessoas (114 MB, acima do limite de 100 MB do GitHub): também baixado por script.
