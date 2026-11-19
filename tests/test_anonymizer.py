@@ -100,7 +100,7 @@ def test_modelo_ausente_gera_erro_de_anonimizacao(tmp_path):
         YoloPlateDetector(model_path=tmp_path / "nao-existe.onnx")
 
 
-@pytest.mark.skipif(not PERSON_MODEL.is_file(), reason="rode python -m scripts.baixar_modelos")
+@pytest.mark.skipif(not PERSON_MODEL.is_file(), reason="rode python -m scripts.modelos.baixar_modelos")
 def test_modelos_reais_carregam_e_rodam():
     """Integração: os dois .onnx do repositório carregam e rodam numa imagem sem rosto nem placa."""
     anonymizer = build_default_anonymizer()
@@ -116,7 +116,7 @@ def test_modelos_reais_carregam_e_rodam():
 # --- Opções em avaliação: A (pessoa), A2 (cabeça e ombros) e B (rosto ampliado) ---
 
 needs_person_model = pytest.mark.skipif(
-    not PERSON_MODEL.is_file(), reason="rode python -m scripts.baixar_modelos para baixar o detector de pessoas"
+    not PERSON_MODEL.is_file(), reason="rode python -m scripts.modelos.baixar_modelos para baixar o detector de pessoas"
 )
 
 

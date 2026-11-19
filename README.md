@@ -57,6 +57,11 @@ Python, do FastAPI e do .NET.
 
 ### Organização do código
 
+![Mapa do repositório: dados e modelos, o serviço app/ dividido em rotas, visão computacional, IA generativa, integração e núcleo, as ferramentas em scripts/ e a base de testes, documentação e execução](docs/estrutura.png)
+
+O mapa é gerado a partir de [`docs/estrutura.html`](docs/estrutura.html). As cores seguem as áreas da IA:
+visão computacional, IA generativa, integração e nuvem, núcleo do serviço, qualidade e avaliação.
+
 | Pasta | Responsabilidade |
 |---|---|
 | `app/api/` | Rotas FastAPI (`/analisar`, `/anonymize`, `/verificar-foto`, `/verificar-poste`, `/agendador`), dependências e validação da entrada. |
@@ -66,7 +71,10 @@ Python, do FastAPI e do .NET.
 | `app/integrations/` | Cliente da API .NET (login, renovação de token, 429 e 5xx com novas tentativas) e do Azure Blob. |
 | `app/pipeline.py` | O caminho completo de um frame: borra, analisa, sobe ao Blob, cria captura e análise. |
 | `app/scheduler.py` | O agendador: fonte de cada câmera e a rodada (um item com erro não para os outros). |
-| `scripts/` | Avaliação, demonstração, download e conversão dos modelos, deploy no Azure. |
+| `scripts/modelos/` | Baixa os modelos com SHA-256 (`baixar_modelos.py`) e converte o de buraco para ONNX (`exportar_buraco.py`). |
+| `scripts/avaliacao/` | Mede o buraco com F1 e matriz de confusão (`avaliar_buraco.py`) e compara as estratégias de borrão (`comparar_borrao.py`). |
+| `scripts/demo/` | Demonstração e conferência: agendador no terminal, fotos de teste no Blob, login e agenda da .NET, provedores de LLM, extração de frames. |
+| `scripts/deploy/` | Publica a IA no Azure Container Instances (`deploy_aci.sh`). |
 | `tests/` | 204 testes com pytest (sem internet, sem .NET e sem Blob: tudo com dublês). |
 
 **Stack:** Python 3.13, FastAPI, Pydantic, ONNX Runtime (sem PyTorch em produção), OpenCV, APScheduler,
@@ -161,10 +169,10 @@ para o cidadão vai junto porque a rota pública da .NET mostra esse campo no ap
 | Câmeras de teste | Prints de câmeras públicas da CET | uso só em teste | Ensaios; **não** ficam no repositório |
 
 **Preparação:**
-- Os modelos não ficam no Git: `scripts/baixar_modelos.py` baixa e confere o **SHA-256** de cada um, e o
+- Os modelos não ficam no Git: `scripts/modelos/baixar_modelos.py` baixa e confere o **SHA-256** de cada um, e o
   Dockerfile converte o modelo de buraco num estágio separado (o PyTorch não vai para a imagem final).
   Detalhes e hashes em [`models/README.md`](models/README.md).
-- As fotos de teste ficam no **Blob privado**, já borradas, enviadas por `scripts/subir_fontes_demo.py` a
+- As fotos de teste ficam no **Blob privado**, já borradas, enviadas por `scripts/demo/subir_fontes_demo.py` a
   partir da lista [`config/fontes_demo.json`](config/fontes_demo.json). O código não supõe nome de arquivo.
 - Cada câmera tem, no `config/cameras.json`, a posição das luminárias e as zonas que parecem buraco mas não
   são (tampa metálica, grelha), marcadas à mão num frame de referência.
@@ -173,7 +181,7 @@ para o cidadão vai junto porque a rota pública da .NET mostra esse campo no ap
 
 ### Buraco: escolha do modelo
 
-`python -m scripts.avaliar_buraco` (IoU ≥ 0,5, limiar 0,25), no teste separado de 100 fotos:
+`python -m scripts.avaliacao.avaliar_buraco` (IoU ≥ 0,5, limiar 0,25), no teste separado de 100 fotos:
 
 | Modelo | Precisão | Recall | F1 |
 |---|---|---|---|
@@ -239,7 +247,7 @@ Câmera de demonstração `DEMO-BURACO`, com uma foto do dataset público, cadas
 - **Dia 22, 12:00:** o mesmo buraco foi **vinculado** à ocorrência 1, sem abrir outra:
 
 ```
-$ python -m scripts.rodar_agendador --at 2026-11-22T12:00-03:00
+$ python -m scripts.demo.rodar_agendador --at 2026-11-22T12:00-03:00
 Fontes de frame configuradas: CET-BRASIL, CET-CIDADE-JARDIM, CET-CONSOLACAO, CET-IGUATEMI, CET-IBIRAPUERA, DEMO-BURACO
   - CET-CONSOLACAO · 2026-11-22T15:00:00+00:00 · FIXED_TIME → SENT · imagem 6 · 0 detecção(ões)
 LLM reserva respondeu depois de falha(s): principal: HTTP 429
@@ -291,7 +299,7 @@ da .NET (login, 401, 429 com `Retry-After`, 5xx), Blob, pipeline, agendador, a r
    liga as integrações (.NET, Blob, LLM). Variável vazia = integração desligada.
 3. Baixar os modelos de privacidade (confere o SHA-256):
    ```bash
-   .venv/Scripts/python.exe -m scripts.baixar_modelos
+   .venv/Scripts/python.exe -m scripts.modelos.baixar_modelos
    ```
 4. Subir a API e abrir `http://localhost:8000/docs`:
    ```bash
@@ -313,9 +321,9 @@ Sem o modelo, a API sobe do mesmo jeito e a resposta avisa "Buraco: modelo indis
 Com a .NET, o Blob e os `ISSUE_TYPE_ID_*` no `.env`:
 
 ```bash
-python -m scripts.testar_dotnet --at 2026-11-21T12:00-03:00     # login e agenda (só leitura)
-python -m scripts.rodar_agendador --at 2026-11-21T12:00-03:00   # uma rodada do agendador, frame a frame
-python -m scripts.subir_fontes_demo                              # sobe as fotos de teste, borradas, ao Blob
+python -m scripts.demo.testar_dotnet --at 2026-11-21T12:00-03:00     # login e agenda (só leitura)
+python -m scripts.demo.rodar_agendador --at 2026-11-21T12:00-03:00   # uma rodada do agendador, frame a frame
+python -m scripts.demo.subir_fontes_demo                              # sobe as fotos de teste, borradas, ao Blob
 ```
 
 O `--at` simula outro horário: a .NET responde como se fossem 12:00, sem esperar o meio-dia.
@@ -327,7 +335,7 @@ reserva assume e a resposta pode chegar a ~40 s.
 
 ### Deploy no Azure
 
-`bash scripts/deploy_aci.sh` constrói a imagem, envia ao Azure Container Registry e recria o container
+`bash scripts/deploy/deploy_aci.sh` constrói a imagem, envia ao Azure Container Registry e recria o container
 `aci-sampatech-ia` no mesmo Resource Group da API, com as variáveis do `.env.cloud` (segredos em *secure
 environment variables*) e espera o `/health` responder.
 

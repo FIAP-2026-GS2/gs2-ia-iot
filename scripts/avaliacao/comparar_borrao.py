@@ -1,7 +1,7 @@
 """Compara as estratégias de anonimização lado a lado, para decidir com imagens reais.
 
-    python -m scripts.comparar_borrao data/amostras/
-    python -m scripts.comparar_borrao foto1.jpg foto2.jpg
+    python -m scripts.avaliacao.comparar_borrao data/amostras/
+    python -m scripts.avaliacao.comparar_borrao foto1.jpg foto2.jpg
 
 Para cada imagem, gera em data/comparacao/ um painel com 7 quadros:
     ORIGINAL | ATUAL (rosto + placa) | B (rosto 2x + placa) | A (pessoa inteira) | Cabeça (topo e centro da pessoa)

@@ -1,8 +1,8 @@
 """Sobe as fotos de teste (já borradas) ao Blob como fonte das câmeras, ou baixa de volta para ver.
 
-    python -m scripts.subir_fontes_demo                          # borra e sobe todas as fotos da lista
-    python -m scripts.subir_fontes_demo --camera DEMO-BURACO     # só uma câmera
-    python -m scripts.subir_fontes_demo --baixar data/amostras/demo-blob   # baixa do Blob para ver
+    python -m scripts.demo.subir_fontes_demo                          # borra e sobe todas as fotos da lista
+    python -m scripts.demo.subir_fontes_demo --camera DEMO-BURACO     # só uma câmera
+    python -m scripts.demo.subir_fontes_demo --baixar data/amostras/demo-blob   # baixa do Blob para ver
 
 A lista de fotos fica em config/fontes_demo.json: cada câmera diz qual arquivo local é a foto
 de "dia" (frame das 12:00) e qual é a de "noite" (00:00). O script não supõe nenhum padrão de

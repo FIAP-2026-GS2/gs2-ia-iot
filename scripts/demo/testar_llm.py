@@ -1,9 +1,9 @@
 """Confere os provedores de LLM do .env: lista os modelos e mede a latência de uma pergunta com imagem.
 
 Uso:
-    python -m scripts.testar_llm --listar                 # modelos que a sua chave enxerga
-    python -m scripts.testar_llm                          # pergunta do poste com uma foto sintética
-    python -m scripts.testar_llm --imagem foto.jpg        # pergunta do poste com uma foto sua
+    python -m scripts.demo.testar_llm --listar                 # modelos que a sua chave enxerga
+    python -m scripts.demo.testar_llm                          # pergunta do poste com uma foto sintética
+    python -m scripts.demo.testar_llm --imagem foto.jpg        # pergunta do poste com uma foto sua
 
 Atenção: a foto vai para fora (Groq/Gemini) SEM passar pelo borrão. Use só fotos sem pessoas
 nem placas, ou passe pela rota /verificar-poste, que borra antes de enviar.
