@@ -17,7 +17,8 @@ Métricas:
 - por imagem (matriz de confusão): "tem buraco?" sim/não, que é o que abre ou não uma ocorrência
 
 Com --verificar, cada caixa do YOLO passa pelo LLM (o mesmo de app/analysis.py), e só contam as
-confirmadas. As fotos vão ao LLM sem borrão: são do dataset público e dos prints de rua sem pessoas próximas.
+confirmadas. Na avaliação, o LLM recebe só os recortes das caixas candidatas (pedaços do asfalto, sem
+borrão) das fotos do dataset público e das fotos de rua sem buraco; na API e no agendador, tudo é borrado antes.
 """
 
 import argparse

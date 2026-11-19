@@ -67,7 +67,7 @@ Python, do FastAPI e do .NET.
 | `app/pipeline.py` | O caminho completo de um frame: borra, analisa, sobe ao Blob, cria captura e análise. |
 | `app/scheduler.py` | O agendador: fonte de cada câmera e a rodada (um item com erro não para os outros). |
 | `scripts/` | Avaliação, demonstração, download e conversão dos modelos, deploy no Azure. |
-| `tests/` | 200 testes com pytest (sem internet, sem .NET e sem Blob: tudo com dublês). |
+| `tests/` | 204 testes com pytest (sem internet, sem .NET e sem Blob: tudo com dublês). |
 
 **Stack:** Python 3.13, FastAPI, Pydantic, ONNX Runtime (sem PyTorch em produção), OpenCV, APScheduler,
 httpx, azure-storage-blob, pytest. Docker e Azure Container Instances.
@@ -251,6 +251,20 @@ LLM reserva respondeu depois de falha(s): principal: HTTP 429
 O LLM principal bateu no limite de uso e o reserva assumiu, sem mudar o resultado.
 O mesmo ensaio rodou num **clone limpo** dentro do Docker: a foto veio do Blob e o modelo, do build.
 
+### Situações de falha
+
+| Situação | O que acontece | Onde é testado |
+|---|---|---|
+| Arquivo que não é imagem, vazio ou acima de 10 MB | 400/422, 413 ou 415, nada é processado | `test_analyze`, `test_anonymize`, `test_photo_check` |
+| Modelo de borrão ausente ou com erro | 503 e nenhuma imagem sai do serviço; o agendador não envia o frame | `test_anonymizer`, `test_integrations` |
+| Modelo de buraco ausente | a API sobe; a resposta avisa "modelo indisponível" e os outros cenários seguem | `test_scenarios` |
+| LLM principal fora ou com limite (429) | o reserva assume; se os dois falharem: buraco fica em 0,49 (não abre ocorrência), poste usa a regra de brilho, `/verificar-foto` responde 503 | `test_llm_client`, `test_scenarios`, `test_streetlight`, `test_photo_check` |
+| LLM responde fora do formato | conta como falha (mesmo caminho acima), nunca vira detecção | `test_llm_client`, `test_photo_check` |
+| .NET fora do ar, 401, 429 ou 5xx | renova o token, espera o `Retry-After`, tenta de novo com a mesma `Idempotency-Key` | `test_integrations` |
+| Reenvio do mesmo horário | a .NET não pede de novo; a chave de idempotência evita duplicar | `test_integrations`, ensaio na nuvem |
+| Foto escura (meia-noite) | buraco não roda à noite; poste compara com o meio-dia | `test_scenarios` |
+| Foto de celular muito grande | reduzida para 1920 px antes do borrão | `test_frames`, `test_anonymize` |
+
 ### Testes automatizados
 
 ```bash
@@ -258,7 +272,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-**200 testes**, sem rede: rotas (chave, formatos, erros), anonimização (borrão, falha segura, confirmação dupla
+**204 testes**, sem rede: rotas (chave, formatos, erros), anonimização (borrão, falha segura, confirmação dupla
 do rosto), buraco (letterbox, NMS, zonas, verificador), poste, cliente do LLM (reserva, JSON inválido), cliente
 da .NET (login, 401, 429 com `Retry-After`, 5xx), Blob, pipeline, agendador, a regra do `/verificar-foto` e configuração.
 
@@ -306,8 +320,9 @@ python -m scripts.subir_fontes_demo                              # sobe as fotos
 
 O `--at` simula outro horário: a .NET responde como se fossem 12:00, sem esperar o meio-dia.
 
-**Antes de apresentar:** faça uma chamada de aquecimento (por exemplo, um `/verificar-foto` no Swagger). A
-primeira análise depois de subir a IA leva mais tempo, e, quando o LLM principal bate no limite de uso (429), o
+**Aquecimento:** na subida, a API roda o borrão e o detector de buraco uma vez numa imagem preta
+(`app/warmup.py`), porque a 1ª execução de um modelo ONNX é a mais lenta. Assim a primeira foto real já sai
+rápida (medido na nuvem: 3,9 s na 1ª chamada do `/anonymize`, 2,9 s na 2ª). Quando o LLM principal bate no limite de uso (429), o
 reserva assume e a resposta pode chegar a ~40 s.
 
 ### Deploy no Azure
@@ -364,7 +379,7 @@ environment variables*) e espera o `/health` responder.
 - Cada etapa foi testada manualmente (Swagger e terminal) antes do commit, inclusive o ensaio de ponta a ponta
   com a .NET na nuvem e o clone limpo.
 - Todo o código foi revisado e commitado pelo autor, em branches por funcionalidade.
-- 200 testes automatizados.
+- 204 testes automatizados.
 
 ## Integrantes
 
